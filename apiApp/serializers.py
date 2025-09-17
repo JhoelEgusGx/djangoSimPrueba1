@@ -21,16 +21,36 @@ class TarifaSerializer(serializers.ModelSerializer):
 
 # ---------------------------✅
 class ImagenProductoSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    public_id = serializers.SerializerMethodField()
     class Meta:
         model = ImagenProducto
-        fields = '__all__'
+        fields = ["id", "url"]
 
+    def get_url(self, obj):
+        if obj.imagen:
+            return obj.imagen.url
+        return None
+
+    def get_public_id(self, obj):
+        return obj.imagen.public_id if obj.imagen else None
 
 # ---------------------------✅
 class VideoProductoSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    public_id = serializers.SerializerMethodField()
+
     class Meta:
         model = VideoProducto
-        fields = '__all__'
+        fields = ["id", "url"]
+
+    def get_url(self, obj):
+        if obj.video:
+            return obj.video.url
+        return None
+    
+    def get_public_id(self, obj):
+        return obj.video.public_id if obj.video else None   
 
 
 # ---------------------------✅

@@ -1,6 +1,7 @@
 # Create your models here.
 from django.db import models
 from django.utils.html import escape
+from cloudinary.models import CloudinaryField
 import random
 import string
 
@@ -38,12 +39,12 @@ class Tarifa(models.Model):
 # ---------------------------
 class ImagenProducto(models.Model):
     producto = models.ForeignKey(Producto, related_name='imagenes', on_delete=models.CASCADE)
-    imagen = models.ImageField(upload_to='productos/imagenes/')
+    imagen = CloudinaryField("imagen",null=True, blank=True)
 
 # ---------------------------
 class VideoProducto(models.Model):
     producto = models.ForeignKey(Producto, related_name='videos', on_delete=models.CASCADE)
-    video = models.FileField(upload_to='productos/videos/')
+    video = CloudinaryField("video", resource_type="video", null=True, blank=True)
 
 # ---------------------------
 class MetodoPago(models.Model):
