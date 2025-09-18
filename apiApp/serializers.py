@@ -25,7 +25,7 @@ class ImagenProductoSerializer(serializers.ModelSerializer):
     public_id = serializers.SerializerMethodField()
     class Meta:
         model = ImagenProducto
-        fields = ["id", "url"]
+        fields = ["id", "url", "public_id"]
 
     def get_url(self, obj):
         if obj.imagen:
@@ -42,7 +42,7 @@ class VideoProductoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VideoProducto
-        fields = ["id", "url"]
+        fields = ["id", "url", "public_id"]
 
     def get_url(self, obj):
         if obj.video:
