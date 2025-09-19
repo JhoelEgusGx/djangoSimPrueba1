@@ -10,7 +10,7 @@ from .serializers import (
     ImagenProductoSerializer, VideoProductoSerializer,
     MetodoPagoSerializer, PedidoSerializer, PedidoItemSerializer
 )
-
+from rest_framework import filters
 # ---------------- ViewSets ---------------- #
 
 class CategoriaViewSet(viewsets.ModelViewSet):
@@ -21,6 +21,8 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['nombre', 'categorias__nombre']
 
 
 class TarifaViewSet(viewsets.ModelViewSet):
