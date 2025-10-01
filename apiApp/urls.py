@@ -1,11 +1,11 @@
 from django.urls import path, include
-from . import views
 from rest_framework.routers import DefaultRouter
 from .views import (
     ProductoViewSet, CategoriaViewSet, TarifaViewSet,
     ImagenProductoViewSet, VideoProductoViewSet,
-    MetodoPagoViewSet, PedidoViewSet, PedidoItemViewSet
+    MetodoPagoViewSet, PedidoViewSet, PedidoItemViewSet, HomePage
 )
+from . import views
 
 router = DefaultRouter()
 router.register(r'productos', ProductoViewSet)

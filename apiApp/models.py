@@ -50,7 +50,7 @@ class VideoProducto(models.Model):
 class MetodoPago(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
     descripcion = models.TextField(blank=True, null=True)
-    qr_imagen = models.ImageField(upload_to='pagos/qr/', blank=True, null=True)
+    qr_imagen = CloudinaryField("imgpagoqr",null=True, blank=True)
     numero_cuenta = models.CharField(max_length=100, blank=True, null=True)
     
     def __str__(self):
@@ -72,7 +72,7 @@ class Pedido(models.Model):
     distrito = models.CharField(max_length=100, blank=True, null=True)
     direccion = models.TextField(blank=True, null=True) 
 
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.PROTECT)
 

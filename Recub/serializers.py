@@ -6,20 +6,20 @@ from .models import (
 )
 
 # ---------------------------✅
-
-
 class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categoria
         fields = '__all__'
 
 
+# ---------------------------✅
 class TarifaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tarifa
         fields = '__all__'
 
 
+# ---------------------------✅
 class ImagenProductoSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     public_id = serializers.SerializerMethodField()
@@ -29,12 +29,15 @@ class ImagenProductoSerializer(serializers.ModelSerializer):
         fields = ["id", "url", "public_id"]
 
     def get_url(self, obj):
-        return obj.imagen.url if obj.imagen else None
+        if obj.imagen:
+            return obj.imagen.url
+        return None
 
     def get_public_id(self, obj):
         return obj.imagen.public_id if obj.imagen else None
 
 
+# ---------------------------✅
 class VideoProductoSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     public_id = serializers.SerializerMethodField()
@@ -44,12 +47,15 @@ class VideoProductoSerializer(serializers.ModelSerializer):
         fields = ["id", "url", "public_id"]
 
     def get_url(self, obj):
-        return obj.video.url if obj.video else None
+        if obj.video:
+            return obj.video.url
+        return None
 
     def get_public_id(self, obj):
         return obj.video.public_id if obj.video else None
 
 
+# ---------------------------✅
 class ProductoSerializer(serializers.ModelSerializer):
     categorias = CategoriaSerializer(many=True, read_only=True)
     tarifas = TarifaSerializer(many=True, read_only=True)
@@ -61,25 +67,14 @@ class ProductoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# ---------------------------✅
 class MetodoPagoSerializer(serializers.ModelSerializer):
-    qr_imagen_url = serializers.SerializerMethodField()
-    qr_imagen_id = serializers.SerializerMethodField()
-
     class Meta:
         model = MetodoPago
-        fields = [
-            "id", "nombre", "descripcion",
-            "qr_imagen_url", "qr_imagen_id",
-            "numero_cuenta"
-        ]
-
-    def get_qr_imagen_url(self, obj):
-        return obj.qr_imagen.url if obj.qr_imagen else None
-
-    def get_qr_imagen_id(self, obj):
-        return obj.qr_imagen.public_id if obj.qr_imagen else None
+        fields = '__all__'
 
 
+# ---------------------------✅
 class PedidoItemSerializer(serializers.ModelSerializer):
     producto = ProductoSerializer(read_only=True)
     producto_id = serializers.PrimaryKeyRelatedField(
@@ -99,11 +94,10 @@ class PedidoItemSerializer(serializers.ModelSerializer):
         return obj.cantidad * obj.precio_unitario
 
 
+# ---------------------------✅
 class PedidoSerializer(serializers.ModelSerializer):
-    # write-only items input, read-only detailed items in response
     items = PedidoItemSerializer(many=True, write_only=True)
-    items_detalle = PedidoItemSerializer(
-        many=True, read_only=True, source='items')
+    items_detalle = PedidoItemSerializer(many=True, read_only=True, source='items')
     metodo_pago = MetodoPagoSerializer(read_only=True)
     metodo_pago_id = serializers.PrimaryKeyRelatedField(
         queryset=MetodoPago.objects.all(), write_only=True
@@ -124,7 +118,7 @@ class PedidoSerializer(serializers.ModelSerializer):
         tarifas = producto.tarifas.all().order_by("minimo")
 
         for tarifa in tarifas:
-            if tarifa.maximo is not None:
+            if tarifa.maximo:
                 if tarifa.minimo <= cantidad <= tarifa.maximo:
                     return tarifa.precio_unitario
             else:
@@ -132,84 +126,63 @@ class PedidoSerializer(serializers.ModelSerializer):
                     return tarifa.precio_unitario
         return 0
 
-    def validate(self, data):
-        items = data.get('items') or []
-        if not items:
-            raise serializers.ValidationError(
-                "El pedido debe tener al menos un producto.")
-        # validar DNI y telefono si deseas
-        dni = data.get('dni', '')
-        telefono = data.get('telefono', '')
-        if dni and len(dni) != 8:
-            raise serializers.ValidationError("El DNI debe tener 8 dígitos.")
-        if telefono and len(telefono) != 9:
-            raise serializers.ValidationError(
-                "El teléfono debe tener 9 dígitos.")
-        return data
-
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         metodo_pago = validated_data.pop('metodo_pago_id')
 
-        # Primero validar y calcular total sin tocar DB (doble validación)
         total = 0
-        prepared_items = []
-        for item in items_data:
-            producto = item['producto_id']
-            cantidad = item['cantidad']
+        pedido_items = []
 
-            if cantidad <= 0:
-                raise serializers.ValidationError(
-                    f"Cantidad inválida para {producto.nombre}.")
+        # Calculamos primero todo (validaciones + precios)
+        for item_data in items_data:
+            producto = item_data['producto_id']
+            cantidad = item_data['cantidad']
 
+            # Validar stock
             if cantidad > producto.cantidad:
                 raise serializers.ValidationError(
                     f"Stock insuficiente para {producto.nombre}. Solo hay {producto.cantidad} disponibles."
                 )
 
+            # Calcular precio unitario con tarifa
             precio_unitario = self.calcular_precio_unitario(producto, cantidad)
             if precio_unitario == 0:
                 raise serializers.ValidationError(
                     f"No existe tarifa válida para {producto.nombre} con {cantidad} unidades."
                 )
 
-            subtotal = cantidad * precio_unitario
-            total += subtotal
+            # Acumulamos el total
+            total += cantidad * precio_unitario
 
-            prepared_items.append({
+            pedido_items.append({
                 "producto": producto,
                 "cantidad": cantidad,
-                "precio_unitario": precio_unitario,
-                "subtotal": subtotal
+                "precio_unitario": precio_unitario
             })
 
-        # envío provincia
-        if validated_data.get('envio_provincia'):
+        # Costo adicional por envío a provincia
+        if validated_data.get("envio_provincia"):
             total += 8
 
-        # Crear pedido con total ya calculado
+        # Ahora sí, creamos el pedido con total ya calculado
         pedido = Pedido.objects.create(
             metodo_pago=metodo_pago,
             total=total,
             **validated_data
         )
 
-        # Guardar items y descontar stock (persistir cambios)
-        for it in prepared_items:
-            producto = it['producto']
-            cantidad = it['cantidad']
-            precio_unitario = it['precio_unitario']
-
-            # descontar stock
+        # Guardamos los items y descontamos stock
+        for item in pedido_items:
+            producto = item["producto"]
+            cantidad = item["cantidad"]
             producto.cantidad -= cantidad
             producto.save()
 
-            # crear item
             PedidoItem.objects.create(
                 pedido=pedido,
                 producto=producto,
                 cantidad=cantidad,
-                precio_unitario=precio_unitario
+                precio_unitario=item["precio_unitario"]
             )
 
         return pedido
