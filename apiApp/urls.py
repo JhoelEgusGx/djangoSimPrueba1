@@ -20,4 +20,5 @@ router.register(r'items-pedido', PedidoItemViewSet)
 urlpatterns = [
     path('', views.HomePage, name='home'),
     path('api/', include(router.urls)),
+    path('productos/<int:id>/cantidad/', views.producto_cantidad, name='producto_cantidad'),
 ]

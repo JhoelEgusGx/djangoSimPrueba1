@@ -132,6 +132,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/' 
 MEDIA_ROOT = BASE_DIR / 'media' 
 
+# Resend API
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 
 CORS_ALLOW_ALL_ORIGINS = True 
