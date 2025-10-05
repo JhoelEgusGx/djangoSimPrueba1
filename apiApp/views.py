@@ -17,19 +17,22 @@ from .serializers import (
     MetodoPagoSerializer, PedidoSerializer, PedidoItemSerializer
 )
 
+
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
 
+
 class ProductoViewSet(viewsets.ModelViewSet):
-    queryset = Producto.objects.select_related('categorias').prefetch_related('tarifas', 'imagenes', 'videos')
+    queryset = Producto.objects.prefetch_related(
+        'categorias', 'tarifas', 'imagenes', 'videos')
     serializer_class = ProductoSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['nombre', 'descripcion']
 
     def get_queryset(self):
         if self.action == 'retrieve':
-            return Producto.objects.select_related('categorias').prefetch_related('tarifas', 'imagenes', 'videos').only(
+            return Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'videos').only(
                 'id', 'nombre', 'descripcion', 'cantidad', 'fecha_ingreso', 'categorias', 'tarifas', 'imagenes', 'videos'
             )
         return self.queryset
@@ -42,30 +45,37 @@ class ProductoViewSet(viewsets.ModelViewSet):
         except Producto.DoesNotExist:
             return JsonResponse({"error": "Producto no encontrado"}, status=404)
 
+
 class TarifaViewSet(viewsets.ModelViewSet):
     queryset = Tarifa.objects.all()
     serializer_class = TarifaSerializer
+
 
 class ImagenProductoViewSet(viewsets.ModelViewSet):
     queryset = ImagenProducto.objects.all()
     serializer_class = ImagenProductoSerializer
 
+
 class VideoProductoViewSet(viewsets.ModelViewSet):
     queryset = VideoProducto.objects.all()
     serializer_class = VideoProductoSerializer
+
 
 class MetodoPagoViewSet(viewsets.ModelViewSet):
     queryset = MetodoPago.objects.all()
     serializer_class = MetodoPagoSerializer
 
+
 class PedidoViewSet(viewsets.ModelViewSet):
-    queryset = Pedido.objects.select_related('metodo_pago').prefetch_related('items__producto').order_by('-fecha')
+    queryset = Pedido.objects.select_related(
+        'metodo_pago').prefetch_related('items__producto').order_by('-fecha')
     serializer_class = PedidoSerializer
 
     @action(detail=False, methods=['get'], url_path='codigo/(?P<codigo>[^/.]+)')
     def buscar_por_codigo(self, request, codigo=None):
         try:
-            pedido = Pedido.objects.select_related('metodo_pago').prefetch_related('items__producto').get(codigo=codigo)
+            pedido = Pedido.objects.select_related('metodo_pago').prefetch_related(
+                'items__producto').get(codigo=codigo)
             serializer = self.get_serializer(pedido)
             return Response(serializer.data)
         except Pedido.DoesNotExist:
@@ -95,7 +105,8 @@ class PedidoViewSet(viewsets.ModelViewSet):
             subtotal = precio_unitario * cantidad
             total_general += subtotal
             primera_imagen = producto.imagenes.first()
-            imagen_url = primera_imagen.imagen.url if (primera_imagen and primera_imagen.imagen) else "https://via.placeholder.com/50"
+            imagen_url = primera_imagen.imagen.url if (
+                primera_imagen and primera_imagen.imagen) else "https://via.placeholder.com/50"
             items_html += f"""
             <tr>
                 <td style="padding:8px; border:1px solid #ddd; display:flex; align-items:center; gap:8px;">
@@ -151,9 +162,11 @@ class PedidoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
 class PedidoItemViewSet(viewsets.ModelViewSet):
     queryset = PedidoItem.objects.select_related('producto', 'pedido').all()
     serializer_class = PedidoItemSerializer
+
 
 def HomePage(request):
     return render(request, 'index.html')
