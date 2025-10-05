@@ -1,33 +1,29 @@
-# Create your models here.
+# apiApp/models.py
 from django.db import models
-from django.utils.html import escape
 from cloudinary.models import CloudinaryField
 import random
 import string
 
-# ---------------------------✅
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100)
 
     def __str__(self):
         return self.nombre
 
-# ---------------------------✅
 class Producto(models.Model):
     nombre = models.CharField(max_length=255)
     descripcion = models.TextField()
-    fecha_ingreso = models.DateField(auto_now_add=True)
-    cantidad = models.PositiveIntegerField()
+    fecha_ingreso = models.DateField(auto_now_add=True, db_index=True)  # Índice
+    cantidad = models.PositiveIntegerField(db_index=True)  # Índice
     categorias = models.ManyToManyField(Categoria, related_name='productos')
 
     def __str__(self):
         return self.nombre
 
-# ---------------------------   
 class Tarifa(models.Model):
     producto = models.ForeignKey(Producto, related_name='tarifas', on_delete=models.CASCADE)
     minimo = models.PositiveIntegerField()
-    maximo = models.PositiveIntegerField(null=True, blank=True)  # null = sin límite
+    maximo = models.PositiveIntegerField(null=True, blank=True)
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:
@@ -36,27 +32,23 @@ class Tarifa(models.Model):
     def __str__(self):
         return f"{self.producto.nombre} - {self.minimo}-{self.maximo or '∞'} unidades → S/{self.precio_unitario}"
 
-# ---------------------------
 class ImagenProducto(models.Model):
     producto = models.ForeignKey(Producto, related_name='imagenes', on_delete=models.CASCADE)
-    imagen = CloudinaryField("imagen",null=True, blank=True)
+    imagen = CloudinaryField("imagen", null=True, blank=True)
 
-# ---------------------------
 class VideoProducto(models.Model):
     producto = models.ForeignKey(Producto, related_name='videos', on_delete=models.CASCADE)
     video = CloudinaryField("video", resource_type="video", null=True, blank=True)
 
-# ---------------------------
 class MetodoPago(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
     descripcion = models.TextField(blank=True, null=True)
-    qr_imagen = CloudinaryField("imgpagoqr",null=True, blank=True)
+    qr_imagen = CloudinaryField("imgpagoqr", null=True, blank=True)
     numero_cuenta = models.CharField(max_length=100, blank=True, null=True)
-    
+
     def __str__(self):
         return self.nombre
 
-# ---------------------------
 class Pedido(models.Model):
     codigo = models.CharField(max_length=5, unique=True, editable=False)
     fecha = models.DateTimeField(auto_now_add=True)
@@ -66,14 +58,11 @@ class Pedido(models.Model):
     telefono = models.CharField(max_length=9)
     correo = models.EmailField()
     envio_provincia = models.BooleanField(default=False)
-
     departamento = models.CharField(max_length=100, blank=True, null=True)
     provincia = models.CharField(max_length=100, blank=True, null=True)
     distrito = models.CharField(max_length=100, blank=True, null=True)
-    direccion = models.TextField(blank=True, null=True) 
-
+    direccion = models.TextField(blank=True, null=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
     metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.PROTECT)
 
     def save(self, *args, **kwargs):
@@ -90,7 +79,6 @@ class Pedido(models.Model):
     def __str__(self):
         return f"Pedido {self.codigo}"
 
-# ---------------------------
 class PedidoItem(models.Model):
     pedido = models.ForeignKey(Pedido, related_name='items', on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)

@@ -1,12 +1,11 @@
+# apiApp/views.py
 from django.shortcuts import render
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from utils.email_service import enviar_correo_pedido
 from django.shortcuts import get_object_or_404
-
 from django.http import JsonResponse
-
+from utils.email_service import enviar_correo_pedido
 from .models import (
     Producto, Categoria, Tarifa,
     ImagenProducto, VideoProducto,
@@ -18,16 +17,30 @@ from .serializers import (
     MetodoPagoSerializer, PedidoSerializer, PedidoItemSerializer
 )
 
-# ViewSets
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
 
 class ProductoViewSet(viewsets.ModelViewSet):
-    queryset = Producto.objects.all()
+    queryset = Producto.objects.select_related('categorias').prefetch_related('tarifas', 'imagenes', 'videos')
     serializer_class = ProductoSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['nombre', 'categorias__nombre']
+    search_fields = ['nombre', 'descripcion']
+
+    def get_queryset(self):
+        if self.action == 'retrieve':
+            return Producto.objects.select_related('categorias').prefetch_related('tarifas', 'imagenes', 'videos').only(
+                'id', 'nombre', 'descripcion', 'cantidad', 'fecha_ingreso', 'categorias', 'tarifas', 'imagenes', 'videos'
+            )
+        return self.queryset
+
+    @action(detail=True, methods=['get'])
+    def cantidad(self, request, pk=None):
+        try:
+            producto = Producto.objects.only('cantidad').get(id=pk)
+            return JsonResponse({"cantidad": producto.cantidad})
+        except Producto.DoesNotExist:
+            return JsonResponse({"error": "Producto no encontrado"}, status=404)
 
 class TarifaViewSet(viewsets.ModelViewSet):
     queryset = Tarifa.objects.all()
@@ -46,54 +59,43 @@ class MetodoPagoViewSet(viewsets.ModelViewSet):
     serializer_class = MetodoPagoSerializer
 
 class PedidoViewSet(viewsets.ModelViewSet):
-    queryset = Pedido.objects.all().order_by('-fecha')
+    queryset = Pedido.objects.select_related('metodo_pago').prefetch_related('items__producto').order_by('-fecha')
     serializer_class = PedidoSerializer
 
     @action(detail=False, methods=['get'], url_path='codigo/(?P<codigo>[^/.]+)')
     def buscar_por_codigo(self, request, codigo=None):
         try:
-            pedido = Pedido.objects.get(codigo=codigo)
+            pedido = Pedido.objects.select_related('metodo_pago').prefetch_related('items__producto').get(codigo=codigo)
             serializer = self.get_serializer(pedido)
             return Response(serializer.data)
         except Pedido.DoesNotExist:
             return Response({"error": "Pedido no encontrado"}, status=status.HTTP_404_NOT_FOUND)
-    
 
-
-    # 📨 Sobrescribimos create para enviar correo al guardar pedido
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         pedido = serializer.save()
-
         items_html = ""
         total_general = 0
 
         for item in request.data.get("items", []):
             producto = get_object_or_404(Producto, id=item["producto_id"])
             cantidad = int(item["cantidad"])
-
-            # ✅ Buscar tarifa según cantidad
             tarifa = None
             for t in producto.tarifas.all():
                 if (t.minimo is None or cantidad >= t.minimo) and (t.maximo is None or cantidad <= t.maximo):
                     tarifa = t
                     break
-
             if not tarifa:
                 return Response(
                     {"error": f"No hay tarifa válida para {producto.nombre} con cantidad {cantidad}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
             precio_unitario = float(tarifa.precio_unitario)
             subtotal = precio_unitario * cantidad
             total_general += subtotal
-
-            # ✅ primera imagen (si existe)
             primera_imagen = producto.imagenes.first()
             imagen_url = primera_imagen.imagen.url if (primera_imagen and primera_imagen.imagen) else "https://via.placeholder.com/50"
-
             items_html += f"""
             <tr>
                 <td style="padding:8px; border:1px solid #ddd; display:flex; align-items:center; gap:8px;">
@@ -106,18 +108,15 @@ class PedidoViewSet(viewsets.ModelViewSet):
             </tr>
             """
 
-        # 🚚 Envío a provincia
         envio = 0
         if pedido.envio_provincia:
             envio = 8
             total_general += envio
 
-        # 📩 HTML del correo
         mensaje_html = f"""
         <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; border:1px solid #eee; padding:20px; border-radius:8px;">
             <h2 style="color:#0f172a; text-align:center;">¡Gracias por tu pedido, {pedido.nombre}!</h2>
             <p style="text-align:center;">Tu código de pedido es: <b>{pedido.codigo}</b></p>
-
             <h3 style="margin-top:30px;">Resumen de pedido</h3>
             <table style="width:100%; border-collapse:collapse; margin-top:10px;">
                 <thead>
@@ -132,12 +131,10 @@ class PedidoViewSet(viewsets.ModelViewSet):
                     {items_html}
                 </tbody>
             </table>
-
             <div style="margin-top:20px; text-align:right;">
                 {"<p>Envío a provincia: <b>S/. 8.00</b></p>" if envio else ""}
                 <h3>Total: S/. {total_general:.2f}</h3>
             </div>
-
             <p style="margin-top:30px; text-align:center; color:#555;">
                 Recibimos tu pedido y lo estamos preparando para enviarlo a tu domicilio.<br>
                 ¡Gracias por confiar en <b>Gobady Perú</b>!
@@ -145,7 +142,6 @@ class PedidoViewSet(viewsets.ModelViewSet):
         </div>
         """
 
-        # enviar correo al cliente
         enviar_correo_pedido(
             cliente_email=pedido.correo,
             asunto="Confirmación de tu pedido en Gobady Perú",
@@ -155,22 +151,9 @@ class PedidoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-
-
-
 class PedidoItemViewSet(viewsets.ModelViewSet):
-    queryset = PedidoItem.objects.all()
+    queryset = PedidoItem.objects.select_related('producto', 'pedido').all()
     serializer_class = PedidoItemSerializer
 
-# Home page view if you want
 def HomePage(request):
     return render(request, 'index.html')
-
-
-def producto_cantidad(request, id):
-    try:
-        #producto = Producto.objects.get(id=id)
-        producto = Producto.objects.only('cantidad').get(id=id)
-        return JsonResponse({"cantidad": producto.cantidad})
-    except Producto.DoesNotExist:
-        return JsonResponse({"error": "Producto no encontrado"}, status=404)

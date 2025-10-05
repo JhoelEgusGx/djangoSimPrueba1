@@ -1,31 +1,32 @@
+# BackGobadyperu/settings.py
 from pathlib import Path
 import os
 import dj_database_url
 import cloudinary
 import cloudinary.uploader
-from dotenv import load_dotenv  
+from dotenv import load_dotenv
+
 load_dotenv()
 
-
-# Ruta principal del proyecto✅
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Clave secreta del proyecto✅
 SECRET_KEY = os.getenv("SECRET_KEY")
-# Modo desarrollador ✅
 DEBUG = os.getenv("DEBUG", "False") == "True"
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:3000,https://gobady-peru.vercel.app").split(",")
 
-# Hosts Permitidos  ⚠️
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+CORS_ALLOWED_ORIGINS = [
+    "https://gobady-peru.vercel.app",
+] if not DEBUG else [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
-# Cloudinary  - Django integrations
-cloudinary.config(  
-    cloud_name = os.getenv("CLOUD_NAME"), 
-    api_key = os.getenv("API_KEY"),
-    api_secret = os.getenv("API_SECRET")
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
 )
 
-# Definir aplicaciones
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,10 +38,9 @@ INSTALLED_APPS = [
     'apiApp',
     'rest_framework',
     'cloudinary',
-       
+    'django_redis',  # Para caching
 ]
 
-# Middleware??
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -53,19 +53,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-### para buscador no repetidos
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
     ]
 }
 
-
-# ???
 ROOT_URLCONF = 'BackGobadyperu.urls'
 
-
-# ???
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -83,15 +78,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'BackGobadyperu.wsgi.application'
 
-
-# La base de datos (ruta donde esta la base de datos y proveedor de base de datos)✅
-DATABASES = {
-    'default': dj_database_url.parse(os.getenv("DATABASE_URL"))
-}
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+if os.getenv("DJANGO_ENV") == "development":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.parse(os.getenv("DATABASE_URL"))
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -108,32 +105,27 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'America/Lima'
-
 USE_I18N = True
-
 USE_TZ = True
 
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Archivos estaticos
-STATIC_URL = '/static/' 
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# ???
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'  
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-# IMAGENES
-MEDIA_URL = '/media/' 
-MEDIA_ROOT = BASE_DIR / 'media' 
-
-# Resend API
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
-
-CORS_ALLOW_ALL_ORIGINS = True 
+if not DEBUG:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
