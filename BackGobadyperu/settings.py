@@ -4,43 +4,67 @@ import dj_database_url
 import cloudinary
 import cloudinary.uploader
 from dotenv import load_dotenv  
+
+# =========================
+# Cargar variables de entorno
+# =========================
 load_dotenv()
 
-
-# Ruta principal del proyecto✅
+# =========================
+# Rutas y claves
+# =========================
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Clave secreta del proyecto✅
-SECRET_KEY = os.getenv("SECRET_KEY")
-# Modo desarrollador ✅
+SECRET_KEY = os.getenv("SECRET_KEY", "insecure-secret-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-# Hosts Permitidos  ⚠️
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+# =========================
+# Hosts y seguridad
+# =========================
+if DEBUG:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+else:
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
-# Cloudinary  - Django integrations
+# =========================
+# Configuración de Cloudinary
+# =========================
 cloudinary.config(  
-    cloud_name = os.getenv("CLOUD_NAME"), 
-    api_key = os.getenv("API_KEY"),
-    api_secret = os.getenv("API_SECRET")
+    cloud_name=os.getenv("CLOUD_NAME"), 
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET")
 )
 
-# Definir aplicaciones
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'  
+
+# =========================
+# Aplicaciones instaladas
+# =========================
 INSTALLED_APPS = [
+    # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Terceros
     "corsheaders",
+    "rest_framework",
+    "cloudinary",
+
+    # Apps propias
     'apiApp',
-    'rest_framework',
-    'cloudinary',
-       
 ]
 
-# Middleware??
+# =========================
+# Middleware
+# =========================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -53,19 +77,24 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-### para buscador no repetidos
+# =========================
+# Configuración de REST Framework
+# =========================
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
     ]
 }
 
-
-# ???
+# =========================
+# URLs y WSGI
+# =========================
 ROOT_URLCONF = 'BackGobadyperu.urls'
+WSGI_APPLICATION = 'BackGobadyperu.wsgi.application'
 
-
-# ???
+# =========================
+# Templates
+# =========================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -81,59 +110,52 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'BackGobadyperu.wsgi.application'
+# =========================
+# Base de datos
+# =========================
+if DEBUG:
+    # Desarrollo → SQLite
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    # Producción → Postgres (Railway)
+    DATABASES = {
+        "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
+    }
 
-
-# La base de datos (ruta donde esta la base de datos y proveedor de base de datos)✅
-DATABASES = {
-    'default': dj_database_url.parse(os.getenv("DATABASE_URL"))
-}
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# =========================
+# Validación de contraseñas
+# =========================
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
+# =========================
+# Internacionalización
+# =========================
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'America/Lima'
-
 USE_I18N = True
-
 USE_TZ = True
 
+# =========================
+# Archivos estáticos y media
+# =========================
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# Archivos estaticos
-STATIC_URL = '/static/' 
-
-# ???
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'  
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# IMAGENES
-MEDIA_URL = '/media/' 
-MEDIA_ROOT = BASE_DIR / 'media' 
-
-# Resend API
+# =========================
+# Otras configuraciones
+# =========================
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-
-
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = True
