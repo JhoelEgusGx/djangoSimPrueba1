@@ -166,11 +166,3 @@ class PedidoItemViewSet(viewsets.ModelViewSet):
 def HomePage(request):
     return render(request, 'index.html')
 
-
-def producto_cantidad(request, id):
-    try:
-        #producto = Producto.objects.get(id=id)
-        producto = Producto.objects.only('cantidad').get(id=id)
-        return JsonResponse({"cantidad": producto.cantidad})
-    except Producto.DoesNotExist:
-        return JsonResponse({"error": "Producto no encontrado"}, status=404)
