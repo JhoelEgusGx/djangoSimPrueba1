@@ -6,6 +6,7 @@ from .models import (
 )
 
 
+# ---------------------------- FORMS ----------------------------
 class ImagenProductoForm(forms.ModelForm):
     existing_url = forms.URLField(
         required=False,
@@ -15,12 +16,11 @@ class ImagenProductoForm(forms.ModelForm):
 
     class Meta:
         model = ImagenProducto
-        fields = ["imagen", "existing_url"]  # mostramos ambos
+        fields = ["imagen", "existing_url"]
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         if self.cleaned_data.get("existing_url"):
-            # 👇 si pegaste URL, lo guarda en lugar de subir
             instance.imagen = self.cleaned_data["existing_url"]
         if commit:
             instance.save()
@@ -47,10 +47,30 @@ class VideoProductoForm(forms.ModelForm):
         return instance
 
 
+class MetodoPagoForm(forms.ModelForm):
+    existing_url = forms.URLField(
+        required=False,
+        label="Usar URL existente",
+        help_text="Pega aquí la URL de Cloudinary si ya tienes el QR subido"
+    )
+
+    class Meta:
+        model = MetodoPago
+        fields = ["nombre", "descripcion", "qr_imagen", "existing_url", "numero_cuenta"]
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get("existing_url"):
+            instance.qr_imagen = self.cleaned_data["existing_url"]
+        if commit:
+            instance.save()
+        return instance
+
+
 # ---------------------------- INLINES ----------------------------
 class ImagenProductoInline(admin.TabularInline):
     model = ImagenProducto
-    form = ImagenProductoForm   # 👈 aquí usamos el form
+    form = ImagenProductoForm
     extra = 1
 
 
@@ -64,9 +84,8 @@ class TarifaInline(admin.TabularInline):
     model = Tarifa
     extra = 1
 
+
 # ---------------------------- PRODUCTO ----------------------------
-
-
 class ProductoAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'fecha_ingreso', 'cantidad')
     inlines = [ImagenProductoInline, VideoProductoInline, TarifaInline]
@@ -75,9 +94,8 @@ class ProductoAdmin(admin.ModelAdmin):
 
 admin.site.register(Producto, ProductoAdmin)
 
+
 # ---------------------------- PEDIDO ----------------------------
-
-
 class PedidoItemInline(admin.TabularInline):
     model = PedidoItem
     extra = 0
@@ -85,7 +103,7 @@ class PedidoItemInline(admin.TabularInline):
     readonly_fields = ("subtotal",)
 
     def subtotal(self, obj):
-        if obj.id:  # si ya existe en BD
+        if obj.id:
             return obj.cantidad * obj.precio_unitario
         return "-"
     subtotal.short_description = "Subtotal"
@@ -109,5 +127,10 @@ class PedidoAdmin(admin.ModelAdmin):
 
 
 # ---------------------------- OTROS ----------------------------
+@admin.register(MetodoPago)
+class MetodoPagoAdmin(admin.ModelAdmin):
+    form = MetodoPagoForm
+    list_display = ("nombre", "numero_cuenta")
+
+
 admin.site.register(Categoria)
-admin.site.register(MetodoPago)
