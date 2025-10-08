@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "cloudinary",
+    "cloudinary_storage",
 
     # Apps propias
     'apiApp',
@@ -171,4 +172,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Otras configuraciones
 # =========================
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-CORS_ALLOW_ALL_ORIGINS = True
+
+
+
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").replace(" ", "").split(",")
