@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "cloudinary",
-    "cloudinary_storage",
 
     # Apps propias
     'apiApp',
@@ -150,14 +149,14 @@ USE_TZ = True
 # Archivos estáticos y media
 # =========================
 STATIC_URL = '/static/'
-
+STATIC_ROOT = BASE_DIR / "staticfiles" # 👈 siempre definido
 # if DEBUG:
 #     STATICFILES_DIRS = [BASE_DIR / "static"]
 # else:
 #     STATIC_ROOT = BASE_DIR / "staticfiles"
 #     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 if not DEBUG:
-    STATIC_ROOT = BASE_DIR / "staticfiles"
+    
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
