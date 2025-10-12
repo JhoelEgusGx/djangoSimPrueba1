@@ -184,31 +184,129 @@ def HomePage(request):
 # ===============================
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+def obtener_contexto_tienda():
+    """Genera información actualizada de productos, categorías y precios"""
+    
+    categorias = Categoria.objects.all()
+    productos = Producto.objects.prefetch_related('categorias', 'tarifas').all()
+    metodos_pago = MetodoPago.objects.all()
+    
+    contexto = "=== INFORMACIÓN DE GOBADY PERÚ ===\n\n"
+    
+    # Categorías disponibles
+    contexto += "📦 CATEGORÍAS:\n"
+    for cat in categorias:
+        cantidad_productos = cat.productos.count()
+        contexto += f"- {cat.nombre} ({cantidad_productos} productos)\n"
+    
+    contexto += "\n🛍️ PRODUCTOS DISPONIBLES:\n"
+    for prod in productos:
+        contexto += f"\n▪ {prod.nombre}\n"
+        contexto += f"  Descripción: {prod.descripcion}\n"
+        contexto += f"  Stock: {prod.cantidad} unidades\n"
+        contexto += f"  Categorías: {', '.join([c.nombre for c in prod.categorias.all()])}\n"
+        
+        # Agregar tarifas
+        if prod.tarifas.exists():
+            contexto += "  Precios según cantidad:\n"
+            for tarifa in prod.tarifas.all():
+                rango = f"{tarifa.minimo}-{tarifa.maximo if tarifa.maximo else '∞'}"
+                contexto += f"    • {rango} unidades → S/. {tarifa.precio_unitario} c/u\n"
+    
+    # Métodos de pago
+    contexto += "\n💳 MÉTODOS DE PAGO:\n"
+    for mp in metodos_pago:
+        contexto += f"- {mp.nombre}: {mp.descripcion or 'Disponible'}\n"
+    
+    contexto += "\n📍 INFORMACIÓN DE ENVÍOS:\n"
+    contexto += "- Envío a Lima: Consultar disponibilidad\n"
+    contexto += "- Envío a provincia: S/. 8.00 adicionales\n"
+    
+    return contexto
+
+
 @csrf_exempt
 def chatbot(request):
+    """Vista mejorada del chatbot con contexto completo y historial"""
+    
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            user_message = data.get("message", "")
-
-            # Crear modelo
-            model = genai.GenerativeModel("gemini-2.5-flash")
-
-            # Contexto (instrucciones para el chatbot)
+            user_message = data.get("message", "").strip()
+            historial = data.get("history", [])  # Recibe historial del frontend
+            
+            if not user_message:
+                return JsonResponse({"error": "Mensaje vacío"}, status=400)
+            
+            # Obtener contexto actualizado de la tienda
+            contexto_tienda = obtener_contexto_tienda()
+            
+            # Construir historial formateado
+            historial_texto = ""
+            for msg in historial[-6:]:  # Solo últimos 6 mensajes para no saturar
+                rol = msg.get("sender", "user")
+                texto = msg.get("text", "")
+                if rol == "user":
+                    historial_texto += f"Usuario: {texto}\n"
+                else:
+                    historial_texto += f"Asistente: {texto}\n"
+            
+            # Prompt mejorado con instrucciones claras
             prompt = f"""
-            Eres un asistente amable y experto en los productos de una tienda online llamada Gobady Perú.
-            Responde las consultas de los clientes de forma breve y clara.
-            Si te preguntan por precios, colores o disponibilidad, responde de forma general y sugiere visitar la tienda web.
-            Usuario: {user_message}
-            """
+Eres un asistente virtual experto y amigable de **Gobady Perú**, una tienda online de productos.
 
-            # Generar respuesta
+{contexto_tienda}
+
+=== INSTRUCCIONES ===
+1. Responde de forma conversacional, amigable y profesional
+2. Si preguntan por productos, menciona nombre, descripción, precio según cantidad y stock
+3. Si preguntan por precios específicos, usa las tarifas exactas del contexto
+4. Si no sabes algo, sugiere visitar la web o contactar por WhatsApp
+5. Usa emojis ocasionalmente para hacer la conversación más cálida
+6. Si preguntan cómo comprar, explica que pueden hacerlo desde la web
+7. Mantén respuestas concisas (máximo 3-4 líneas)
+
+=== HISTORIAL DE CONVERSACIÓN ===
+{historial_texto}
+
+=== CONSULTA ACTUAL ===
+Usuario: {user_message}
+
+Asistente:"""
+
+            # Crear modelo y generar respuesta
+            model = genai.GenerativeModel(
+                "gemini-2.0-flash-exp",
+                generation_config={
+                    "temperature": 0.7,
+                    "top_p": 0.95,
+                    "top_k": 40,
+                    "max_output_tokens": 500,
+                }
+            )
+            
             response = model.generate_content(prompt)
-            reply = response.text.strip() if response.text else "Lo siento, no tengo una respuesta en este momento."
-
+            
+            if not response or not response.text:
+                return JsonResponse({
+                    "reply": "Disculpa, tuve un problema al procesar tu consulta. ¿Podrías reformularla? 😊"
+                })
+            
+            reply = response.text.strip()
+            
+            # Agregar sugerencias si la respuesta es muy corta
+            if len(reply) < 50:
+                reply += "\n\n¿Hay algo más en lo que pueda ayudarte? 😊"
+            
             return JsonResponse({"reply": reply})
-
+            
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "JSON inválido"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
+            print(f"Error en chatbot: {str(e)}")
+            return JsonResponse({
+                "reply": "Lo siento, ocurrió un error inesperado. Por favor, intenta de nuevo en unos momentos. 🙏",
+                "error": str(e)
+            }, status=500)
+    
     return JsonResponse({"error": "Método no permitido"}, status=405)
