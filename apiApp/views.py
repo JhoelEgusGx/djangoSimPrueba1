@@ -6,6 +6,10 @@ from utils.email_service import enviar_correo_pedido
 from django.shortcuts import get_object_or_404
 
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import google.generativeai as genai
+import json
+import os
 
 from .models import (
     Producto, Categoria, Tarifa,
@@ -19,9 +23,12 @@ from .serializers import (
 )
 
 # ViewSets
+
+
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
+
 
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
@@ -29,21 +36,26 @@ class ProductoViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['nombre', 'categorias__nombre']
 
+
 class TarifaViewSet(viewsets.ModelViewSet):
     queryset = Tarifa.objects.all()
     serializer_class = TarifaSerializer
+
 
 class ImagenProductoViewSet(viewsets.ModelViewSet):
     queryset = ImagenProducto.objects.all()
     serializer_class = ImagenProductoSerializer
 
+
 class VideoProductoViewSet(viewsets.ModelViewSet):
     queryset = VideoProducto.objects.all()
     serializer_class = VideoProductoSerializer
 
+
 class MetodoPagoViewSet(viewsets.ModelViewSet):
     queryset = MetodoPago.objects.all()
     serializer_class = MetodoPagoSerializer
+
 
 class PedidoViewSet(viewsets.ModelViewSet):
     queryset = Pedido.objects.all().order_by('-fecha')
@@ -57,10 +69,9 @@ class PedidoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except Pedido.DoesNotExist:
             return Response({"error": "Pedido no encontrado"}, status=status.HTTP_404_NOT_FOUND)
-    
-
 
     # 📨 Sobrescribimos create para enviar correo al guardar pedido
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -92,7 +103,8 @@ class PedidoViewSet(viewsets.ModelViewSet):
 
             # ✅ primera imagen (si existe)
             primera_imagen = producto.imagenes.first()
-            imagen_url = primera_imagen.imagen.url if (primera_imagen and primera_imagen.imagen) else "https://via.placeholder.com/50"
+            imagen_url = primera_imagen.imagen.url if (
+                primera_imagen and primera_imagen.imagen) else "https://via.placeholder.com/50"
 
             items_html += f"""
             <tr>
@@ -156,13 +168,47 @@ class PedidoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-
-
 class PedidoItemViewSet(viewsets.ModelViewSet):
     queryset = PedidoItem.objects.all()
     serializer_class = PedidoItemSerializer
 
 # Home page view if you want
+
+
 def HomePage(request):
     return render(request, 'index.html')
 
+
+# ===============================
+# CONFIGURAR GEMINI
+# ===============================
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+@csrf_exempt
+def chatbot(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            user_message = data.get("message", "")
+
+            # Crear modelo
+            model = genai.GenerativeModel("gemini-2.5-flash")
+
+            # Contexto (instrucciones para el chatbot)
+            prompt = f"""
+            Eres un asistente amable y experto en los productos de una tienda online llamada Gobady Perú.
+            Responde las consultas de los clientes de forma breve y clara.
+            Si te preguntan por precios, colores o disponibilidad, responde de forma general y sugiere visitar la tienda web.
+            Usuario: {user_message}
+            """
+
+            # Generar respuesta
+            response = model.generate_content(prompt)
+            reply = response.text.strip() if response.text else "Lo siento, no tengo una respuesta en este momento."
+
+            return JsonResponse({"reply": reply})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
