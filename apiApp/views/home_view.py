@@ -130,6 +130,7 @@ def obtener_contexto_tienda():
 
 @csrf_exempt
 def chatbot(request):
+    print("ENTRANDO A CHATBOT")
     """Vista optimizada del chatbot con rate limiting y cache"""
     if request.method == "POST":
         try:
