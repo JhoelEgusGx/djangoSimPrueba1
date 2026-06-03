@@ -1,6 +1,5 @@
 # Create your models here.
 from django.db import models
-from django.utils.html import escape
 from cloudinary.models import CloudinaryField
 import random
 import string

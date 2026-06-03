@@ -1,0 +1,115 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Pedido #{{ pedido.codigo }} — Gobady Perú Admin{% endblock %}
+{% block breadcrumb %}Pedido #{{ pedido.codigo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <a href="{% url 'pedido_list' %}" class="inline-flex items-center gap-2 text-sm text-base-content/50 hover:text-base-content transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        Volver a pedidos
+    </a>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-base-100 border border-base-300 rounded-2xl p-6">
+                <h3 class="text-base font-bold text-base-content mb-4">Productos</h3>
+                <div class="space-y-3">
+                    {% for item in pedido.items.all %}
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-base-200/50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-base-200 flex items-center justify-center text-sm text-base-content/40">📦</div>
+                                <div>
+                                    <p class="text-sm font-medium text-base-content">{{ item.producto.nombre }}</p>
+                                    <p class="text-xs text-base-content/50">{{ item.cantidad }} x S/. {{ item.precio_unitario|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                            <p class="text-sm font-medium text-base-content">S/. {{ item.subtotal|floatformat:2 }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-base-300 space-y-1.5 text-sm">
+                    <div class="flex justify-between text-base-content/60">
+                        <span>Subtotal</span>
+                        <span>S/. {{ pedido.total|add:"-8"|floatformat:2 }}</span>
+                    </div>
+                    {% if pedido.envio_provincia %}
+                        <div class="flex justify-between text-warning">
+                            <span>Envío a provincia</span>
+                            <span>S/. 8.00</span>
+                        </div>
+                    {% endif %}
+                    <div class="flex justify-between text-base font-bold text-base-content pt-2 border-t border-base-300">
+                        <span>Total</span>
+                        <span>S/. {{ pedido.total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-base-100 border border-base-300 rounded-2xl p-6">
+                <h3 class="text-base font-bold text-base-content mb-4">Cliente</h3>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <p class="text-base-content/50 text-xs">Nombre</p>
+                        <p class="text-base-content font-medium">{{ pedido.nombre }} {{ pedido.apellido }}</p>
+                    </div>
+                    <div>
+                        <p class="text-base-content/50 text-xs">DNI</p>
+                        <p class="text-base-content">{{ pedido.dni }}</p>
+                    </div>
+                    <div>
+                        <p class="text-base-content/50 text-xs">Teléfono</p>
+                        <p class="text-base-content">{{ pedido.telefono }}</p>
+                    </div>
+                    <div>
+                        <p class="text-base-content/50 text-xs">Email</p>
+                        <p class="text-base-content break-all">{{ pedido.correo }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-base-100 border border-base-300 rounded-2xl p-6">
+                <h3 class="text-base font-bold text-base-content mb-4">Envío</h3>
+                <div class="space-y-3 text-sm">
+                    {% if pedido.envio_provincia %}
+                        <div>
+                            <p class="text-base-content/50 text-xs">Dirección</p>
+                            <p class="text-base-content">{{ pedido.direccion|default:'—' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-base-content/50 text-xs">Distrito</p>
+                            <p class="text-base-content">{{ pedido.distrito|default:'—' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-base-content/50 text-xs">Provincia</p>
+                            <p class="text-base-content">{{ pedido.provincia|default:'—' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-base-content/50 text-xs">Departamento</p>
+                            <p class="text-base-content">{{ pedido.departamento|default:'—' }}</p>
+                        </div>
+                    {% else %}
+                        <p class="text-base-content/60">Recoge en tienda (Lima)</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="bg-base-100 border border-base-300 rounded-2xl p-6">
+                <h3 class="text-base font-bold text-base-content mb-4">Pago</h3>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <p class="text-base-content/50 text-xs">Método</p>
+                        <p class="text-base-content font-medium">{{ pedido.metodo_pago.nombre }}</p>
+                    </div>
+                    <div>
+                        <p class="text-base-content/50 text-xs">Fecha</p>
+                        <p class="text-base-content">{{ pedido.fecha|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

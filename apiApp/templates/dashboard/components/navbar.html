@@ -1,0 +1,37 @@
+<header class="sticky top-0 z-30 h-16 bg-base-100/80 backdrop-blur-xl border-b border-base-300 flex items-center justify-between px-4 lg:px-8 shrink-0">
+    <div class="flex items-center gap-4">
+        <button id="sidebar-toggle" class="lg:hidden p-2 rounded-xl text-base-content/40 hover:text-base-content hover:bg-base-300 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="hidden sm:flex items-center gap-2 text-sm text-base-content/50">
+            <span class="text-base-content/30">/</span>
+            <span class="text-base-content font-medium">{% block breadcrumb %}Dashboard{% endblock %}</span>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button id="theme-toggle" class="p-2 rounded-xl text-base-content/40 hover:text-base-content hover:bg-base-300 transition-colors" title="Cambiar tema">
+            <svg id="theme-icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg id="theme-icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+
+        <div class="flex items-center gap-3 pl-2 ml-2 border-l border-base-300">
+            <div class="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-base-200/80">
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-primary-content">
+                    {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                </div>
+                <div class="hidden sm:block">
+                    <p class="text-sm font-medium text-base-content leading-tight">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-[11px] text-base-content/40">Administrador</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="p-2 rounded-xl text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Cerrar sesión">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</header>

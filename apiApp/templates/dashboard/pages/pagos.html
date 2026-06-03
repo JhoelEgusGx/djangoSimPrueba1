@@ -1,0 +1,76 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Métodos de Pago — Gobady Perú Admin{% endblock %}
+{% block breadcrumb %}Métodos de Pago{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-base-content tracking-tight">Métodos de Pago</h2>
+            <p class="text-base-content/50 text-sm mt-1">{{ metodos.count }} método{{ metodos.count|pluralize:'s' }}</p>
+        </div>
+        <a href="{% url 'pago_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-focus text-primary-content font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Nuevo Método
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {% for metodo in metodos %}
+            <div class="bg-base-100 border border-base-300 rounded-2xl p-6 card-hover">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-xl text-base-content/60">💳</div>
+                        <div>
+                            <h3 class="text-base font-bold text-base-content">{{ metodo.nombre }}</h3>
+                            {% if metodo.descripcion %}
+                                <p class="text-xs text-base-content/50 mt-0.5">{{ metodo.descripcion }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <a href="{% url 'pago_update' metodo.id %}" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Editar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </a>
+                        <form method="post" action="{% url 'pago_delete' metodo.id %}" class="inline form-eliminar" data-nombre="{{ metodo.nombre }}">
+                            {% csrf_token %}
+                            <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% if metodo.qr_imagen %}
+                    <div class="mb-3">
+                        <img src="{{ metodo.qr_imagen.url }}" alt="QR {{ metodo.nombre }}"
+                             class="w-24 h-24 object-cover rounded-xl border border-base-200">
+                    </div>
+                {% endif %}
+                {% if metodo.numero_cuenta %}
+                    <div class="bg-base-200/50 rounded-xl px-4 py-3">
+                        <p class="text-xs text-base-content/50 mb-0.5">Número de cuenta</p>
+                        <p class="text-sm font-mono text-base-content">{{ metodo.numero_cuenta }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="md:col-span-2 bg-base-100 border border-base-300 rounded-2xl p-12 text-center">
+                <p class="text-base-content/40 text-sm">No hay métodos de pago registrados.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('submit', function (e) {
+        var form = e.target.closest('.form-eliminar');
+        if (!form) return;
+        var nombre = form.getAttribute('data-nombre');
+        if (!confirm('¿Eliminar ' + nombre + '?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

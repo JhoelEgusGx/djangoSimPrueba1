@@ -1,0 +1,120 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gobady Perú — Admin{% endblock %}</title>
+    {% tailwind_css %}
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-base-200 text-base-content antialiased min-h-screen flex">
+
+    {% include 'dashboard/components/sidebar.html' %}
+
+    <div id="main-content" class="flex-1 flex flex-col min-h-screen transition-all duration-300 lg:ml-64">
+        {% include 'dashboard/components/navbar.html' %}
+
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 fade-in">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="toast toast-top toast-end p-4 pointer-events-none">
+                        <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %} shadow-xl pointer-events-auto max-w-sm animate-slide-in">
+                            <span>{{ message }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="border-t border-base-300 px-8 py-4 text-center text-sm text-base-content/30">
+            Gobady Perú &copy; {% now "Y" %} — Panel Administrativo
+        </footer>
+    </div>
+
+    <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/50 hidden lg:hidden"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebarClose = document.getElementById('sidebar-close');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const mainContent = document.getElementById('main-content');
+
+            function openSidebar() {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            if (sidebarToggle) sidebarToggle.addEventListener('click', openSidebar);
+            if (sidebarClose) sidebarClose.addEventListener('click', closeSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+            const toasts = document.querySelectorAll('.toast .alert');
+            toasts.forEach(function (toast) {
+                setTimeout(function () {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.3s ease';
+                    setTimeout(function () { toast.remove(); }, 300);
+                }, 4000);
+            });
+
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const currentPath = window.location.pathname;
+            sidebarLinks.forEach(function (link) {
+                const href = link.getAttribute('href');
+                if (href && currentPath.startsWith(href) && href !== '/dashboard/' || currentPath === href) {
+                    if (href === '/dashboard/' && currentPath === '/dashboard/') {
+                        link.classList.add('active');
+                    } else if (href !== '/dashboard/' && currentPath.startsWith(href)) {
+                        link.classList.add('active');
+                    }
+                }
+            });
+
+            const themeToggle = document.getElementById('theme-toggle');
+            const sunIcon = document.getElementById('theme-icon-sun');
+            const moonIcon = document.getElementById('theme-icon-moon');
+            const html = document.documentElement;
+
+            function setTheme(theme) {
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                if (theme === 'light') {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                } else {
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                }
+            }
+
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            setTheme(savedTheme);
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    const current = html.getAttribute('data-theme');
+                    setTheme(current === 'dark' ? 'light' : 'dark');
+                });
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

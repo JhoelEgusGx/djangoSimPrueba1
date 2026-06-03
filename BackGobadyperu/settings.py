@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 import dj_database_url
 import cloudinary
-import cloudinary.uploader
 from dotenv import load_dotenv  
 
 # =========================
@@ -21,7 +20,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # Hosts y seguridad
 # =========================
 if DEBUG:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1","192.168.100.2"]
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -39,14 +38,15 @@ cloudinary.config(
     api_secret=os.getenv("API_SECRET")
 )
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'  
+# DEFAULT_FILE_STORAGE está comentado porque django-cloudinary-storage no está instalado.
+# CloudinaryField sube archivos directamente vía el SDK (cloudinary.uploader).
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'  
 
 # =========================
 # Aplicaciones instaladas
 # =========================
 INSTALLED_APPS = [
     # Django apps
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -57,9 +57,11 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "cloudinary",
+    "tailwind",
 
     # Apps propias
     'apiApp',
+    "theme"
 ]
 
 # =========================
@@ -192,3 +194,9 @@ CACHES = {
         'LOCATION': 'chatbot-cache',
     }
 }
+
+
+# TAILWIND
+TAILWIND_APP_NAME = "theme"
+# NPM ruta en windows
+NPM_BIN_PATH = r"npm.cmd"

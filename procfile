@@ -1,2 +1,2 @@
-release: python manage.py collectstatic --noinput
+release: cd theme/static_src && npm ci && npm run build && cd ../.. && python manage.py collectstatic --noinput
 web: gunicorn BackGobadyperu.wsgi

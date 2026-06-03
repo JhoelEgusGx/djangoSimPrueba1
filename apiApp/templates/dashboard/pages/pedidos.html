@@ -1,0 +1,386 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Pedidos — Gobady Perú Admin{% endblock %}
+{% block breadcrumb %}Pedidos{% endblock %}
+
+{% block extra_head %}
+<style>
+input[type="date"]:invalid::-webkit-datetime-edit { color: transparent !important; }
+input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-base-content tracking-tight">Pedidos</h2>
+            <p id="pedido-count" class="text-base-content/50 text-sm mt-1">{{ pedidos.count }} pedido{{ pedidos.count|pluralize:'s' }}</p>
+        </div>
+    </div>
+
+    <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+        <div class="px-3 py-4 sm:p-6 border-b border-base-300">
+            <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                <div class="relative w-full sm:flex-1 sm:min-w-[180px] sm:max-w-md">
+                    <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input id="filtro-q" type="text" placeholder="Buscar por código, nombre, DNI, email..."
+                           class="w-full pl-10 pr-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm">
+                </div>
+                <div class="flex flex-1 flex-nowrap gap-3 w-full sm:w-auto">
+                    <div class="relative flex-1 min-w-0" data-dropdown>
+                        <button type="button" class="dropdown-trigger flex items-center gap-2 px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+                            <span class="dropdown-text flex-1 text-left text-base-content/70">Pagos</span>
+                            <svg class="dropdown-chevron w-4 h-4 text-base-content/30 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="dropdown-menu absolute top-full mt-1.5 left-0 w-full bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 hidden overflow-hidden">
+                            <div class="py-1 max-h-60 overflow-y-auto">
+                                <div class="px-4 py-2.5 hover:bg-base-200 cursor-pointer text-sm text-base-content transition-colors" data-value="">Pagos</div>
+                                {% for mp in metodo_pagos %}
+                                    <div class="px-4 py-2.5 hover:bg-base-200 cursor-pointer text-sm text-base-content transition-colors" data-value="{{ mp.id }}">{{ mp.nombre }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" class="dropdown-input" id="filtro-pago" value="">
+                    </div>
+                    <div class="relative flex-1 min-w-0" data-dropdown>
+                        <button type="button" class="dropdown-trigger flex items-center gap-2 px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full">
+                            <span class="dropdown-text flex-1 text-left text-base-content/70">Envíos</span>
+                            <svg class="dropdown-chevron w-4 h-4 text-base-content/30 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="dropdown-menu absolute top-full mt-1.5 left-0 w-full bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 hidden overflow-hidden">
+                            <div class="py-1">
+                                <div class="px-4 py-2.5 hover:bg-base-200 cursor-pointer text-sm text-base-content transition-colors" data-value="">Envíos</div>
+                                <div class="px-4 py-2.5 hover:bg-base-200 cursor-pointer text-sm text-base-content transition-colors" data-value="lima">Lima</div>
+                                <div class="px-4 py-2.5 hover:bg-base-200 cursor-pointer text-sm text-base-content transition-colors" data-value="provincia">Provincia</div>
+                            </div>
+                        </div>
+                        <input type="hidden" class="dropdown-input" id="filtro-envio" value="">
+                    </div>
+                </div>
+                <div class="flex flex-1 flex-nowrap gap-3 min-w-0 w-full sm:w-auto">
+                    <div class="relative flex-1 min-w-0">
+                        <input id="filtro-fecha-desde" type="date" required class="px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full invalid:text-transparent valid:text-base-content">
+                        <span class="date-placeholder absolute left-4 top-1/2 -translate-y-1/2 text-sm text-base-content/40 pointer-events-none select-none">dd/mm/aaaa</span>
+                    </div>
+                    <div class="relative flex-1 min-w-0">
+                        <input id="filtro-fecha-hasta" type="date" required class="px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full invalid:text-transparent valid:text-base-content">
+                        <span class="date-placeholder absolute left-4 top-1/2 -translate-y-1/2 text-sm text-base-content/40 pointer-events-none select-none">dd/mm/aaaa</span>
+                    </div>
+                </div>
+                <button id="btn-limpiar-filtros" class="px-4 py-2.5 bg-base-200 hover:bg-base-300 text-base-content/60 font-medium rounded-xl transition-all text-sm w-full sm:w-auto">Limpiar</button>
+            </div>
+        </div>
+
+        <div id="pedido-cards" class="block md:hidden p-4 space-y-3">
+            {% for pedido in pedidos %}
+                <div class="bg-base-200/50 border border-base-300 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-mono font-bold text-primary">#{{ pedido.codigo }}</span>
+                        <span class="text-sm font-semibold text-success">S/. {{ pedido.total|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-primary-content shrink-0">
+                            {{ pedido.nombre|first|upper }}{{ pedido.apellido|first|upper }}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-base-content">{{ pedido.nombre }} {{ pedido.apellido }}</p>
+                            <p class="text-xs text-base-content/50">{{ pedido.dni }}</p>
+                            <p class="text-xs text-base-content/50 mt-1">{{ pedido.correo }}</p>
+                            <p class="text-xs text-base-content/50">{{ pedido.telefono }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            {% if pedido.envio_provincia %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-warning/10 text-warning">Provincia</span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-200 text-base-content/50">Lima</span>
+                            {% endif %}
+                            <span class="text-xs text-base-content/50">{{ pedido.fecha|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <a href="{% url 'pedido_detail' pedido.id %}" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Ver detalle">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </a>
+                            <form method="post" action="{% url 'pedido_delete' pedido.id %}" class="inline form-eliminar" data-codigo="{{ pedido.codigo }}">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div id="vacio-cards" class="text-center py-12">
+                    <p id="mensaje-vacio-cards" class="text-base-content/40 text-sm">No hay pedidos registrados aún.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-base-300 bg-base-200/50">
+                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Código</th>
+                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Cliente</th>
+                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden lg:table-cell">Contacto</th>
+                        <th class="text-center text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden sm:table-cell">Envío</th>
+                        <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Total</th>
+                        <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden sm:table-cell">Fecha</th>
+                        <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="pedido-tbody" class="divide-y divide-base-300/50">
+                    {% for pedido in pedidos %}
+                        <tr class="hover:bg-base-200/30 transition-colors" data-id="{{ pedido.id }}">
+                            <td class="px-6 py-4">
+                                <span class="text-sm font-mono font-bold text-primary">#{{ pedido.codigo }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm font-medium text-base-content">{{ pedido.nombre }} {{ pedido.apellido }}</p>
+                                <p class="text-xs text-base-content/50">{{ pedido.dni }}</p>
+                            </td>
+                            <td class="px-6 py-4 hidden lg:table-cell">
+                                <p class="text-sm text-base-content/70">{{ pedido.correo }}</p>
+                                <p class="text-xs text-base-content/50">{{ pedido.telefono }}</p>
+                            </td>
+                            <td class="px-6 py-4 text-center hidden sm:table-cell">
+                                {% if pedido.envio_provincia %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-warning/10 text-warning">Provincia</span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-200 text-base-content/50">Lima</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="text-sm font-semibold text-success">S/. {{ pedido.total|floatformat:2 }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm text-base-content/50 hidden sm:table-cell">{{ pedido.fecha|date:"d/m/Y H:i" }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{% url 'pedido_detail' pedido.id %}" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Ver detalle">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </a>
+                                    <form method="post" action="{% url 'pedido_delete' pedido.id %}" class="inline form-eliminar" data-codigo="{{ pedido.codigo }}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr id="fila-vacia">
+                            <td colspan="7" class="px-6 py-12 text-center">
+                                <p id="mensaje-vacio" class="text-base-content/40 text-sm">No hay pedidos registrados aún.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const API_URL = '{% url "pedido_list_api" %}';
+let debounceTimer;
+
+function buildCardHtml(p) {
+    var envioLabel = p.envio_provincia
+        ? '<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-warning/10 text-warning">Provincia</span>'
+        : '<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-200 text-base-content/50">Lima</span>';
+    var detailUrl = '{% url "pedido_detail" 0 %}'.replace('/0/', '/' + p.id + '/');
+    var deleteUrl = '{% url "pedido_delete" 0 %}'.replace('/0/', '/' + p.id + '/');
+    var initials = (p.nombre ? p.nombre[0] : '') + (p.apellido ? p.apellido[0] : '');
+
+    return '<div class="bg-base-200/50 border border-base-300 rounded-xl p-4 space-y-3">' +
+        '<div class="flex items-center justify-between">' +
+        '<span class="text-sm font-mono font-bold text-primary">#' + p.codigo + '</span>' +
+        '<span class="text-sm font-semibold text-success">S/. ' + p.total + '</span></div>' +
+        '<div class="flex items-start gap-3">' +
+        '<div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-primary-content shrink-0">' + initials + '</div>' +
+        '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-base-content">' + p.nombre + ' ' + p.apellido + '</p>' +
+        '<p class="text-xs text-base-content/50">' + p.dni + '</p>' +
+        '<p class="text-xs text-base-content/50 mt-1">' + p.correo + '</p>' +
+        '<p class="text-xs text-base-content/50">' + p.telefono + '</p></div></div>' +
+        '<div class="flex items-center justify-between">' +
+        '<div class="flex items-center gap-2">' + envioLabel +
+        '<span class="text-xs text-base-content/50">' + p.fecha + '</span></div>' +
+        '<div class="flex items-center gap-1">' +
+        '<a href="' + detailUrl + '" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Ver detalle">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></a>' +
+        '<form method="post" action="' + deleteUrl + '" class="inline form-eliminar" data-codigo="' + p.codigo + '">{% csrf_token %}' +
+        '<button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>' +
+        '</div></div></div>';
+}
+
+function buildRowHtml(p) {
+    var envioLabel = p.envio_provincia
+        ? '<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-warning/10 text-warning">Provincia</span>'
+        : '<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-200 text-base-content/50">Lima</span>';
+    var detailUrl = '{% url "pedido_detail" 0 %}'.replace('/0/', '/' + p.id + '/');
+    var deleteUrl = '{% url "pedido_delete" 0 %}'.replace('/0/', '/' + p.id + '/');
+
+    return '<tr class="hover:bg-base-200/30 transition-colors" data-id="' + p.id + '">' +
+        '<td class="px-6 py-4"><span class="text-sm font-mono font-bold text-primary">#' + p.codigo + '</span></td>' +
+        '<td class="px-6 py-4"><p class="text-sm font-medium text-base-content">' + p.nombre + ' ' + p.apellido + '</p><p class="text-xs text-base-content/50">' + p.dni + '</p></td>' +
+        '<td class="px-6 py-4 hidden lg:table-cell"><p class="text-sm text-base-content/70">' + p.correo + '</p><p class="text-xs text-base-content/50">' + p.telefono + '</p></td>' +
+        '<td class="px-6 py-4 text-center hidden sm:table-cell">' + envioLabel + '</td>' +
+        '<td class="px-6 py-4 text-right"><span class="text-sm font-semibold text-success">S/. ' + p.total + '</span></td>' +
+        '<td class="px-6 py-4 text-right text-sm text-base-content/50 hidden sm:table-cell">' + p.fecha + '</td>' +
+        '<td class="px-6 py-4 text-right"><div class="flex items-center justify-end gap-2">' +
+        '<a href="' + detailUrl + '" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Ver detalle"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></a>' +
+        '<form method="post" action="' + deleteUrl + '" class="inline form-eliminar" data-codigo="' + p.codigo + '">{% csrf_token %}<button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>' +
+        '</div></td></tr>';
+}
+
+function cargarPedidos() {
+    const q = document.getElementById('filtro-q').value.trim();
+    const metodoPago = document.getElementById('filtro-pago').value;
+    const envio = document.getElementById('filtro-envio').value;
+    const fechaDesde = document.getElementById('filtro-fecha-desde').value;
+    const fechaHasta = document.getElementById('filtro-fecha-hasta').value;
+
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (metodoPago) params.set('metodo_pago', metodoPago);
+    if (envio) params.set('envio', envio);
+    if (fechaDesde) params.set('fecha_desde', fechaDesde);
+    if (fechaHasta) params.set('fecha_hasta', fechaHasta);
+
+    const url = API_URL + '?' + params.toString();
+
+    fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            const tbody = document.getElementById('pedido-tbody');
+            const cardsContainer = document.getElementById('pedido-cards');
+            const countEl = document.getElementById('pedido-count');
+            const pedidos = resp.data;
+            const total = pedidos.length;
+
+            countEl.textContent = total + ' pedido' + (total !== 1 ? 's' : '');
+
+            if (total === 0) {
+                var emptyMsg = 'No se encontraron pedidos' + (q ? ' para "' + q + '"' : '') + '.';
+                tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center"><p class="text-base-content/40 text-sm">' + emptyMsg + '</p></td></tr>';
+                cardsContainer.innerHTML = '<div class="text-center py-12"><p class="text-base-content/40 text-sm">' + emptyMsg + '</p></div>';
+                return;
+            }
+
+            var cardsHtml = '';
+            var rowsHtml = '';
+            for (var i = 0; i < pedidos.length; i++) {
+                cardsHtml += buildCardHtml(pedidos[i]);
+                rowsHtml += buildRowHtml(pedidos[i]);
+            }
+            cardsContainer.innerHTML = cardsHtml;
+            tbody.innerHTML = rowsHtml;
+        })
+        .catch(function() {});
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const inputQ = document.getElementById('filtro-q');
+    const fechaDesde = document.getElementById('filtro-fecha-desde');
+    const fechaHasta = document.getElementById('filtro-fecha-hasta');
+    const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+
+    function dispararBusqueda() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(cargarPedidos, 300);
+    }
+
+    function dispararInmediato() {
+        clearTimeout(debounceTimer);
+        cargarPedidos();
+    }
+
+    // Custom dropdowns
+    document.querySelectorAll('[data-dropdown]').forEach(function(container) {
+        const trigger = container.querySelector('.dropdown-trigger');
+        const menu = container.querySelector('.dropdown-menu');
+        const text = container.querySelector('.dropdown-text');
+        const input = container.querySelector('.dropdown-input');
+        const chevron = container.querySelector('.dropdown-chevron');
+
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !menu.classList.contains('hidden');
+            document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); });
+            document.querySelectorAll('.dropdown-chevron').forEach(function(c) { c.classList.remove('rotate-180'); });
+            if (!isOpen) {
+                menu.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-180');
+            }
+        });
+
+        menu.addEventListener('click', function(e) {
+            const opt = e.target.closest('[data-value]');
+            if (!opt) return;
+            input.value = opt.dataset.value;
+            text.textContent = opt.textContent;
+            text.classList.remove('text-base-content/70');
+            text.classList.add('text-base-content');
+            menu.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+            dispararInmediato();
+        });
+    });
+
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); });
+        document.querySelectorAll('.dropdown-chevron').forEach(function(c) { c.classList.remove('rotate-180'); });
+    });
+
+    inputQ.addEventListener('input', dispararBusqueda);
+    fechaDesde.addEventListener('change', dispararInmediato);
+    fechaHasta.addEventListener('change', dispararInmediato);
+
+    // Date placeholders
+    document.querySelectorAll('.date-placeholder').forEach(function(span) {
+        var input = span.parentElement.querySelector('input[type="date"]');
+        if (input) {
+            input.addEventListener('change', function() {
+                span.style.display = this.value ? 'none' : '';
+            });
+        }
+    });
+
+    btnLimpiar.addEventListener('click', function () {
+        inputQ.value = '';
+        document.querySelectorAll('[data-dropdown]').forEach(function(container) {
+            container.querySelector('.dropdown-input').value = '';
+            const text = container.querySelector('.dropdown-text');
+            const firstOpt = container.querySelector('[data-value=""]');
+            if (firstOpt) text.textContent = firstOpt.textContent;
+            text.classList.remove('text-base-content');
+            text.classList.add('text-base-content/70');
+        });
+        fechaDesde.value = '';
+        fechaHasta.value = '';
+        document.querySelectorAll('.date-placeholder').forEach(function(span) { span.style.display = ''; });
+        cargarPedidos();
+    });
+
+    document.getElementById('pedido-cards').addEventListener('submit', function (e) {
+        const form = e.target.closest('.form-eliminar');
+        if (form && !confirm('¿Eliminar pedido #' + form.dataset.codigo + '?')) {
+            e.preventDefault();
+        }
+    });
+
+    document.getElementById('pedido-tbody').addEventListener('submit', function (e) {
+        const form = e.target.closest('.form-eliminar');
+        if (form && !confirm('¿Eliminar pedido #' + form.dataset.codigo + '?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

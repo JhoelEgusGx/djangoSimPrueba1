@@ -1,0 +1,59 @@
+<div id="cloudinary-delete-confirm" class="fixed inset-0 z-[60] hidden" role="dialog">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="cloudinary-delete-bg"></div>
+    <div class="relative max-w-sm mx-auto mt-40 bg-base-100 border border-base-300 rounded-2xl shadow-2xl p-6">
+        <h3 class="text-lg font-bold text-base-content mb-2">¿Eliminar imagen?</h3>
+        <p class="text-sm text-base-content/60 mb-6">La imagen se borrará permanentemente de tu cuenta de Cloudinary.</p>
+        <p id="cloudinary-delete-public-id" class="text-xs text-base-content/40 mb-4 truncate"></p>
+        <div class="flex items-center justify-end gap-3">
+            <button type="button" id="cloudinary-delete-cancel" class="px-4 py-2 text-sm font-medium text-base-content/60 hover:text-base-content bg-base-200 hover:bg-base-300 rounded-lg transition-all">Cancelar</button>
+            <button type="button" id="cloudinary-delete-confirm-btn" class="px-4 py-2 text-sm font-semibold text-white bg-error hover:bg-error/90 rounded-xl transition-all flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="cloudinary-modal" class="fixed inset-0 z-50 hidden" role="dialog">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="cloudinary-modal-bg"></div>
+    <div class="relative max-w-4xl mx-auto mt-10 mb-10 bg-base-100 border border-base-300 rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-base-300 shrink-0">
+            <h3 class="text-lg font-bold text-base-content"><span id="cloudinary-modal-title">Explorar imágenes en Cloudinary</span> <span id="cloudinary-total" class="text-base font-normal text-base-content/50"></span></h3>
+            <div class="flex items-center gap-2">
+                <a href="https://console.cloudinary.com/console/media_library/" target="_blank" rel="noopener"
+                   class="px-3 py-1.5 text-xs font-medium text-primary hover:text-primary-focus bg-primary/10 hover:bg-primary/20 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    Ir a Cloudinary
+                </a>
+                <button type="button" id="cloudinary-modal-close" class="p-2 rounded-lg text-base-content/40 hover:text-base-content hover:bg-base-200 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto px-6 py-4">
+            <div id="cloudinary-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div id="cloudinary-loading" class="col-span-full flex items-center justify-center py-16">
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                        <p class="text-sm text-base-content/50">Cargando imágenes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center justify-between px-6 py-4 border-t border-base-300 shrink-0">
+            <div>
+                <p id="cloudinary-selected-info" class="text-sm text-base-content/50">Ninguna imagen seleccionada</p>
+                <p id="cloudinary-page-info" class="text-xs text-base-content/30 mt-0.5"></p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" id="cloudinary-load-more" class="hidden px-4 py-2 text-sm font-medium text-base-content/60 hover:text-base-content bg-base-200 hover:bg-base-300 rounded-lg transition-all">
+                    Cargar más
+                </button>
+                <button type="button" id="cloudinary-btn-confirm" disabled
+                        class="px-5 py-2 text-sm font-semibold rounded-xl transition-all bg-primary/30 text-primary-content/50 cursor-not-allowed">
+                    Usar seleccionada
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,4 @@
 # apiApp/views/home_view.py
-from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -16,10 +15,6 @@ from ..models import Categoria, Producto, MetodoPago
 
 # NOTA: para seguridad, GEMINI_API_KEY debe estar en variables de entorno
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-
-def HomePage(request):
-    return render(request, 'index.html')
 
 
 def get_client_ip(request):

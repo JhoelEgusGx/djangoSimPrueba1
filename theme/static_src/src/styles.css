@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@source "../../../**/*.{html,py,js}";
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+.fade-in { animation: fadeIn 0.3s ease-in-out; }
+.fade-in-up { animation: fadeInUp 0.5s ease-out; }
+.animate-slide-in { animation: slideIn 0.25s ease-out; }
+.float { animation: float 6s ease-in-out infinite; }
+
+.card-hover { transition: all 0.2s ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+
+[data-theme="light"] {
+    --color-base-100: oklch(97% 0.01 85);
+    --color-base-200: oklch(94% 0.012 85);
+    --color-base-300: oklch(89% 0.014 85);
+}
+[data-theme="light"] .card-hover:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.1); }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(107,114,128,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(107,114,128,0.5); }
+
+.sidebar-transition { transition: width 0.3s ease, transform 0.3s ease; }
+.toast { z-index: 9999; }
+
+.sidebar-link.active {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+}
+.sidebar-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    border-radius: 0 3px 3px 0;
+    background-color: var(--color-primary);
+}

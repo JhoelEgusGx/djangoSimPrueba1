@@ -1,0 +1,106 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Dashboard — Gobady Perú Admin{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-base-content tracking-tight">Dashboard</h2>
+            <p class="text-base-content/50 text-sm mt-1">Bienvenido de nuevo, {{ request.user.first_name|default:request.user.username }}</p>
+        </div>
+        <div class="hidden sm:flex items-center gap-2 text-sm text-base-content/50 bg-base-100 border border-base-300 rounded-xl px-4 py-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            {% now "l, d F Y" %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        {% with icon="📦" label="Productos" value=total_productos icon_bg="bg-primary/10" icon_color="text-primary" %}
+            {% include 'dashboard/components/stats_card.html' %}
+        {% endwith %}
+        {% with icon="📋" label="Pedidos" value=total_pedidos icon_bg="bg-success/10" icon_color="text-success" %}
+            {% include 'dashboard/components/stats_card.html' %}
+        {% endwith %}
+        {% with icon="🏷️" label="Categorías" value=total_categorias icon_bg="bg-warning/10" icon_color="text-warning" %}
+            {% include 'dashboard/components/stats_card.html' %}
+        {% endwith %}
+        {% with icon="💳" label="Métodos de Pago" value=total_metodos_pago icon_bg="bg-secondary/10" icon_color="text-secondary" %}
+            {% include 'dashboard/components/stats_card.html' %}
+        {% endwith %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-base-300 flex items-center justify-between">
+                <h3 class="text-base font-bold text-base-content">Pedidos Recientes</h3>
+                <a href="{% url 'pedido_list' %}" class="text-sm text-primary hover:text-primary/80 transition-colors font-medium">Ver todos</a>
+            </div>
+            <div class="p-6">
+                {% if pedidos_recientes %}
+                    <div class="space-y-2">
+                        {% for pedido in pedidos_recientes %}
+                            <a href="{% url 'pedido_detail' pedido.id %}" class="flex items-center justify-between p-3 rounded-xl hover:bg-base-200 transition-all group">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-base-200 flex items-center justify-center text-sm font-bold text-base-content/50 group-hover:text-primary transition-colors">
+                                        #{{ pedido.codigo }}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-base-content">{{ pedido.nombre }} {{ pedido.apellido }}</p>
+                                        <p class="text-xs text-base-content/50">S/. {{ pedido.total|floatformat:2 }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-base-content/50">{{ pedido.fecha|date:"d/m/Y" }}</p>
+                                    <p class="text-xs text-base-content/40">{{ pedido.fecha|date:"H:i" }}</p>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-base-content/40 text-sm text-center py-6">No hay pedidos aún.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-base-300 flex items-center justify-between">
+                <h3 class="text-base font-bold text-base-content">Stock Bajo</h3>
+                <a href="{% url 'producto_list' %}" class="text-sm text-primary hover:text-primary/80 transition-colors font-medium">Ver todos</a>
+            </div>
+            <div class="p-6">
+                {% if productos_bajo_stock %}
+                    <div class="space-y-2">
+                        {% for producto in productos_bajo_stock %}
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-base-200 transition-all">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-lg {% if producto.cantidad == 0 %}bg-error/10{% else %}bg-warning/10{% endif %} flex items-center justify-center text-sm">
+                                        {% with primera_imagen=producto.imagenes.first %}
+                                            {% if primera_imagen and primera_imagen.imagen %}
+                                                🖼️
+                                            {% else %}
+                                                📦
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-medium text-base-content truncate">{{ producto.nombre }}</p>
+                                        <p class="text-xs text-base-content/50 truncate">{{ producto.categorias.all|join:", " }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0 ml-3">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if producto.cantidad == 0 %}bg-error/10 text-error{% elif producto.cantidad <= 3 %}bg-warning/10 text-warning{% else %}bg-primary/10 text-primary{% endif %}">
+                                        {{ producto.cantidad }} uds.
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-base-content/40 text-sm text-center py-6">Todo en stock saludable.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

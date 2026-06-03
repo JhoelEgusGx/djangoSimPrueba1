@@ -1,0 +1,178 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gobady Perú — Iniciar Sesión</title>
+    {% tailwind_css %}
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex bg-base-200">
+    <div class="flex w-full min-h-screen">
+        <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-base-100 items-center justify-center p-8">
+            <div class="w-full max-w-md mx-auto fade-in-up">
+                <div class="text-center mb-8">
+                    <p class="text-sm font-medium text-base-content/50 uppercase tracking-wider mb-4">Panel Administrativo</p>
+                    <span class="text-6xl float inline-block">📦</span>
+                    <h1 class="text-3xl font-extrabold text-base-content mt-4 tracking-tight">GobadyPeru</h1>
+                    <p class="text-base-content/50 mt-1 text-sm">Administra tu tienda online</p>
+                </div>
+
+                <div class="bg-base-200 border border-base-300 rounded-2xl p-8 shadow-xl">
+                    {% if form.errors %}
+                        <div class="bg-error/10 border border-error/20 text-error text-sm rounded-xl p-4 mb-6 flex items-center gap-3">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span>Usuario o contraseña incorrectos. Intenta de nuevo.</span>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" class="space-y-5">
+                        {% csrf_token %}
+                        <div>
+                            <label for="id_username" class="block text-sm font-medium text-base-content/70 mb-1.5">Usuario</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-base-content/40">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                </span>
+                                <input type="text" name="username" id="id_username" required
+                                    class="w-full pl-11 pr-4 py-3 bg-base-100 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                    placeholder="Ingresa tu usuario">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="id_password" class="block text-sm font-medium text-base-content/70 mb-1.5">Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-base-content/40">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                </span>
+                                <input type="password" name="password" id="id_password" required
+                                    class="w-full pl-11 pr-12 py-3 bg-base-100 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                    placeholder="••••••••">
+                                <button type="button" id="togglePassword"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-base-content/40 hover:text-base-content/70 transition-colors">
+                                    <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit"
+                            class="w-full py-3 bg-primary hover:bg-primary-focus text-primary-content font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/25 text-sm tracking-wide">
+                            Iniciar Sesión
+                        </button>
+                    </form>
+                </div>
+
+                <p class="text-center text-xs text-base-content/40 mt-6">
+                    Gobady Perú &copy; {% now "Y" %}
+                </p>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-1/2 relative overflow-hidden bg-base-100 flex items-center justify-center p-8">
+            <div class="absolute inset-0 lg:hidden">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
+                    alt="Background" class="w-full h-full object-cover opacity-10">
+                <div class="absolute inset-0 bg-gradient-to-br from-base-200/90 via-base-200/80 to-base-200/90"></div>
+            </div>
+
+            <div class="hidden lg:block absolute inset-0">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
+                    alt="Dashboard analytics" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-r from-base-100 via-base-100/60 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+            </div>
+
+            <div class="relative z-10 flex items-center justify-center w-full h-full">
+                <div class="lg:hidden w-full max-w-md mx-auto fade-in-up">
+                    <div class="text-center mb-8">
+                        <p class="text-sm font-medium text-base-content/50 uppercase tracking-wider mb-4">Panel Administrativo</p>
+                        <span class="text-5xl float inline-block">📦</span>
+                        <h1 class="text-2xl font-extrabold text-base-content mt-3 tracking-tight">GobadyPeru</h1>
+                    </div>
+
+                    <div class="bg-base-200/95 backdrop-blur-xl border border-base-300 rounded-2xl p-6 shadow-xl">
+                        {% if form.errors %}
+                            <div class="bg-error/10 border border-error/20 text-error text-sm rounded-xl p-4 mb-6 flex items-center gap-3">
+                                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <span>Usuario o contraseña incorrectos.</span>
+                            </div>
+                        {% endif %}
+
+                        <form method="post" class="space-y-4">
+                            {% csrf_token %}
+                            <div>
+                                <label for="id_username_mobile" class="block text-sm font-medium text-base-content/70 mb-1.5">Usuario</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-base-content/40">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    </span>
+                                    <input type="text" name="username" id="id_username_mobile" required
+                                        class="w-full pl-11 pr-4 py-3 bg-base-100 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                        placeholder="Ingresa tu usuario">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="id_password_mobile" class="block text-sm font-medium text-base-content/70 mb-1.5">Contraseña</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-base-content/40">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    </span>
+                                    <input type="password" name="password" id="id_password_mobile" required
+                                        class="w-full pl-11 pr-12 py-3 bg-base-100 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                        placeholder="••••••••">
+                                    <button type="button" id="togglePasswordMobile"
+                                        class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-base-content/40 hover:text-base-content/70 transition-colors">
+                                        <svg id="eyeIconMobile" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full py-3 bg-primary hover:bg-primary-focus text-primary-content font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/25 text-sm tracking-wide">
+                                Iniciar Sesión
+                            </button>
+                        </form>
+                    </div>
+
+                    <p class="text-center text-xs text-base-content/40 mt-5">
+                        Gobady Perú &copy; {% now "Y" %}
+                    </p>
+                </div>
+
+                <div class="hidden lg:flex flex-col items-center text-white max-w-md">
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-3">Gestiona tu tienda</h2>
+                        <p class="text-white/70 text-sm leading-relaxed">Controla productos, pedidos y métricas desde un solo lugar. Diseñado para emprendedores peruanos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setupToggle(btnId, inputId, iconId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            btn.addEventListener('click', function () {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                icon.innerHTML = isPassword
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+            });
+        }
+        setupToggle('togglePassword', 'id_password', 'eyeIcon');
+        setupToggle('togglePasswordMobile', 'id_password_mobile', 'eyeIconMobile');
+    </script>
+</body>
+</html>

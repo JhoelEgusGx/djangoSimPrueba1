@@ -1,0 +1,50 @@
+<aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen sidebar-transition bg-base-100 border-r border-base-300 -translate-x-full lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none">
+    <div class="flex items-center justify-between px-5 h-16 border-b border-base-300 shrink-0">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📦</span>
+            <div>
+                <h1 class="text-base font-extrabold text-base-content tracking-tight">GobadyPeru</h1>
+                <p class="text-[10px] text-base-content/40 -mt-0.5 uppercase tracking-widest font-medium">Panel Admin</p>
+            </div>
+        </div>
+        <button id="sidebar-close" class="lg:hidden p-1.5 rounded-lg text-base-content/40 hover:text-base-content hover:bg-base-300 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <a href="{% url 'dashboard_home' %}" class="sidebar-link relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-base-content/60 hover:text-base-content hover:bg-base-300/50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Dashboard</span>
+        </a>
+
+        <p class="px-4 pt-5 pb-1.5 text-[11px] font-semibold text-base-content/30 uppercase tracking-widest">Tienda</p>
+
+        <a href="{% url 'producto_list' %}" class="sidebar-link relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-base-content/60 hover:text-base-content hover:bg-base-300/50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <span>Productos</span>
+        </a>
+
+        <a href="{% url 'categoria_list' %}" class="sidebar-link relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-base-content/60 hover:text-base-content hover:bg-base-300/50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            <span>Categorías</span>
+        </a>
+
+        <a href="{% url 'pedido_list' %}" class="sidebar-link relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-base-content/60 hover:text-base-content hover:bg-base-300/50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            <span>Pedidos</span>
+        </a>
+
+        <a href="{% url 'pago_list' %}" class="sidebar-link relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-base-content/60 hover:text-base-content hover:bg-base-300/50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <span>Métodos de Pago</span>
+        </a>
+    </nav>
+
+    <div class="border-t border-base-300 px-3 py-3 shrink-0 space-y-1">
+        <a href="https://gobady-peru.vercel.app/" target="_blank" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-base-content/40 hover:text-base-content hover:bg-base-300/50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            <span>Ver Tienda</span>
+        </a>
+    </div>
+</aside>

@@ -1,6 +1,5 @@
 # apiApp/views/producto_views.py
 from rest_framework import viewsets, filters
-from django.http import JsonResponse
 
 from ..models import Producto, Tarifa, ImagenProducto, VideoProducto
 from ..serializers import (

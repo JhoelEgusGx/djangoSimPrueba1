@@ -1,0 +1,566 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}{% if producto %}Editar{% else %}Nuevo{% endif %} Producto — Gobady Perú Admin{% endblock %}
+{% block breadcrumb %}{% if producto %}Editar: {{ producto.nombre }}{% else %}Nuevo Producto{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4 sm:p-8 shadow-sm">
+        <h2 class="text-xl font-bold text-base-content mb-6">{% if producto %}Editar Producto{% else %}Nuevo Producto{% endif %}</h2>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label for="nombre" class="block text-sm font-medium text-base-content/70 mb-1.5">Nombre del Producto</label>
+                <input type="text" name="nombre" id="nombre" value="{{ producto.nombre|default:'' }}" required
+                       class="w-full px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                       placeholder="Ej: Cámara deportiva HD">
+            </div>
+
+            <div>
+                <label for="descripcion" class="block text-sm font-medium text-base-content/70 mb-1.5">Descripción</label>
+                <textarea name="descripcion" id="descripcion" rows="4"
+                          class="w-full px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                          placeholder="Descripción del producto...">{{ producto.descripcion|default:'' }}</textarea>
+            </div>
+
+            <div>
+                <label for="cantidad" class="block text-sm font-medium text-base-content/70 mb-1.5">Stock</label>
+                <input type="number" name="cantidad" id="cantidad" value="{{ producto.cantidad|default:'0' }}" min="0"
+                       class="w-full px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-base-content/70 mb-1.5">Categorías</label>
+                <div class="relative mb-2">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="categorias-search" placeholder="Buscar categorías..."
+                           class="w-full pl-10 pr-4 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                </div>
+                <div class="max-h-48 overflow-y-auto rounded-xl border border-base-300 p-3 space-y-2">
+                    {% for cat in categorias %}
+                        <label class="categoria-item flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all
+                              {% if producto and cat in producto.categorias.all %}border-primary/30 bg-primary/5{% else %}border-transparent hover:bg-base-200{% endif %}"
+                              data-nombre="{{ cat.nombre|lower }}">
+                            <input type="checkbox" name="categorias" value="{{ cat.id }}" {% if producto and cat in producto.categorias.all %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-base-300 bg-base-200 text-primary focus:ring-primary/50 shrink-0">
+                            <span class="text-sm text-base-content/80">{{ cat.nombre }}</span>
+                        </label>
+                    {% empty %}
+                        <p class="text-sm text-base-content/40 text-center py-3">No hay categorías disponibles. <a href="{% url 'categoria_list' %}" class="text-primary hover:text-primary/80">Crear una</a></p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-base-300 pt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-base-content">Tarifas</h3>
+                    <p class="text-xs text-base-content/40">Precio por rango de cantidad</p>
+                </div>
+                <div id="tarifas-container" class="space-y-3">
+                    {% for tarifa in tarifas %}
+                        <div class="tarifa-row flex items-end gap-3">
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-base-content/60 mb-1">Mínimo</label>
+                                <input type="number" name="tarifa_minimo" value="{{ tarifa.minimo }}" min="0"
+                                       class="w-full px-3 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                       placeholder="1">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-base-content/60 mb-1">Máximo</label>
+                                <input type="number" name="tarifa_maximo" value="{{ tarifa.maximo|default:'' }}" min="0"
+                                       class="w-full px-3 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                       placeholder="∞ (opcional)">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-base-content/60 mb-1">Precio (S/.)</label>
+                                <input type="number" step="0.01" name="tarifa_precio" value="{{ tarifa.precio_unitario }}" min="0"
+                                       class="w-full px-3 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                       placeholder="0.00">
+                            </div>
+                            <button type="button" class="remove-tarifa p-2 rounded-lg text-base-content/30 hover:text-error hover:bg-error/10 transition-all mb-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-tarifa" class="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-primary-focus transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Agregar Tarifa
+                </button>
+            </div>
+
+            <div class="border-t border-base-300 pt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-base-content">Imágenes</h3>
+                    <p class="text-xs text-base-content/40">Sube imágenes del producto</p>
+                </div>
+                <div id="imagenes-preview" class="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
+                    {% if producto %}
+                        {% for img in producto.imagenes.all %}
+                            <div class="relative group aspect-square rounded-xl bg-base-200 overflow-hidden border border-base-300" data-img-id="{{ img.id }}">
+                                <img src="{{ img.imagen.url }}" alt="" class="w-full h-full object-cover">
+                                <button type="button" class="marcar-eliminar-img absolute bottom-1 right-1 w-7 h-7 bg-error hover:bg-error/90 text-white rounded-full flex items-center justify-center text-xs shadow-lg transition-all">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="relative">
+                    <label id="imagenes-dropzone" class="flex flex-col items-center justify-center w-full py-6 border-2 border-dashed border-base-300 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-base-200/50 transition-all">
+                        <svg class="w-8 h-8 text-base-content/30 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <p class="text-sm text-base-content/50">Haz clic para agregar imágenes</p>
+                        <p class="text-xs text-base-content/30 mt-1" id="imagenes-count">PNG, JPG, WebP — 0 seleccionadas</p>
+                    </label>
+                    <div id="imagenes-inputs" class="hidden"></div>
+                </div>
+                <div class="mt-3 space-y-2">
+                    <button type="button" id="btn-explorar-cloudinary" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary hover:text-primary-focus bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                        Explorar Cloudinary
+                    </button>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        <input type="text" name="imagen_url" id="imagen_url" placeholder="O pega el public_id o URL de Cloudinary..."
+                               class="w-full pl-10 pr-4 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                    </div>
+                    <div id="cloudinary-url-inputs" class="hidden"></div>
+                </div>
+            </div>
+
+            <div class="border-t border-base-300 pt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-base-content">Videos</h3>
+                    <p class="text-xs text-base-content/40">Sube videos promocionales</p>
+                </div>
+                <div id="videos-preview" class="space-y-2 mb-4">
+                    {% if producto %}
+                        {% for vid in producto.videos.all %}
+                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-xl border border-base-300" data-vid-id="{{ vid.id }}">
+                                <div class="w-10 h-10 rounded-lg bg-base-100 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <span class="text-sm text-base-content/70 truncate flex-1">Video {{ forloop.counter }}</span>
+                                <button type="button" class="marcar-eliminar-vid p-2 rounded-lg text-base-content/30 hover:text-error hover:bg-error/10 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="relative">
+                    <label id="videos-dropzone" class="flex flex-col items-center justify-center w-full py-6 border-2 border-dashed border-base-300 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-base-200/50 transition-all">
+                        <svg class="w-8 h-8 text-base-content/30 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        <p class="text-sm text-base-content/50">Haz clic para agregar videos</p>
+                        <p class="text-xs text-base-content/30 mt-1" id="videos-count">MP4, WebM, MOV — 0 seleccionados</p>
+                    </label>
+                    <div id="videos-inputs" class="hidden"></div>
+                    <div id="cloudinary-video-url-inputs" class="hidden"></div>
+                </div>
+                <div class="mt-3 space-y-2">
+                    <button type="button" id="btn-explorar-cloudinary-video" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary hover:text-primary-focus bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                        Explorar Cloudinary
+                    </button>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        <input type="text" name="video_url" id="video_url" placeholder="O pega el public_id o URL de Cloudinary..."
+                               class="w-full pl-10 pr-4 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                    </div>
+                </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-base-300">
+                <a href="{% url 'producto_list' %}" class="text-sm text-base-content/50 hover:text-base-content transition-colors">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Volver
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 bg-primary hover:bg-primary-focus text-primary-content font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 text-sm">
+                    {% if producto %}Guardar Cambios{% else %}Crear Producto{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% include 'dashboard/components/cloudinary_modal.html' %}
+
+<script src="{% static 'dashboard/js/cloudinary-browser.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('tarifas-container');
+        const addBtn = document.getElementById('add-tarifa');
+
+        function createTarifaRow(minimo, maximo, precio) {
+            const div = document.createElement('div');
+            div.className = 'tarifa-row flex items-end gap-3';
+            div.innerHTML = `
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-base-content/60 mb-1">Mínimo</label>
+                    <input type="number" name="tarifa_minimo" value="${minimo}" min="0"
+                           class="w-full px-3 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                           placeholder="1">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-base-content/60 mb-1">Máximo</label>
+                    <input type="number" name="tarifa_maximo" value="${maximo}" min="0"
+                           class="w-full px-3 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                           placeholder="∞ (opcional)">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-base-content/60 mb-1">Precio (S/.)</label>
+                    <input type="number" step="0.01" name="tarifa_precio" value="${precio}" min="0"
+                           class="w-full px-3 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                           placeholder="0.00">
+                </div>
+                <button type="button" class="remove-tarifa p-2 rounded-lg text-base-content/30 hover:text-error hover:bg-error/10 transition-all mb-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            `;
+            return div;
+        }
+
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                const row = createTarifaRow('', '', '');
+                container.appendChild(row);
+                row.querySelector('.remove-tarifa').addEventListener('click', function () {
+                    row.remove();
+                });
+            });
+        }
+
+        container.querySelectorAll('.remove-tarifa').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const row = btn.closest('.tarifa-row');
+                if (row && container.children.length > 1) {
+                    row.remove();
+                }
+            });
+        });
+
+        const catSearch = document.getElementById('categorias-search');
+        if (catSearch) {
+            catSearch.addEventListener('input', function () {
+                const q = this.value.toLowerCase().trim();
+                document.querySelectorAll('.categoria-item').forEach(function (item) {
+                    const nombre = item.getAttribute('data-nombre') || '';
+                    item.style.display = !q || nombre.includes(q) ? '' : 'none';
+                });
+            });
+        }
+
+        // ─── Acumulación de Imágenes ────────────────────────────────
+        const imgDropzone = document.getElementById('imagenes-dropzone');
+        const imgInputsContainer = document.getElementById('imagenes-inputs');
+        const imgPreview = document.getElementById('imagenes-preview');
+        const imgCountLabel = document.getElementById('imagenes-count');
+        let imgBatches = []; // { input: HTMLInputElement, files: File[] }
+
+        function renderImagePreviews() {
+            imgPreview.querySelectorAll('.preview-new').forEach(function (el) { el.remove(); });
+            var totalFiles = 0;
+            imgBatches.forEach(function (batch, batchIdx) {
+                totalFiles += batch.files.length;
+                batch.files.forEach(function (file, fileIdx) {
+                    var div = document.createElement('div');
+                    div.className = 'preview-new relative group aspect-square rounded-xl overflow-hidden border border-base-300';
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        div.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover"><button type="button" class="remove-img-btn absolute bottom-1 right-1 w-7 h-7 bg-error hover:bg-error/90 text-white rounded-full flex items-center justify-center text-xs shadow-lg" data-batch="' + batchIdx + '" data-file="' + fileIdx + '"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+                        imgPreview.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+            imgCountLabel.textContent = 'PNG, JPG, WebP — ' + totalFiles + ' seleccionada' + (totalFiles !== 1 ? 's' : '');
+        }
+
+        function addImageBatch() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'imagenes';
+            input.multiple = true;
+            input.accept = 'image/*';
+            input.className = 'hidden';
+            var wrapper = document.createElement('div');
+            wrapper.appendChild(input);
+            imgInputsContainer.appendChild(wrapper);
+
+            input.addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    imgBatches.push({ input: this, files: Array.from(this.files) });
+                    renderImagePreviews();
+                } else {
+                    wrapper.remove();
+                }
+            });
+            input.click();
+        }
+
+        if (imgDropzone) {
+            imgDropzone.addEventListener('click', function (e) {
+                if (e.target.closest('.remove-img-btn')) return;
+                e.preventDefault();
+                addImageBatch();
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.remove-img-btn');
+            if (!btn) return;
+            var batchIdx = parseInt(btn.getAttribute('data-batch'));
+            var fileIdx = parseInt(btn.getAttribute('data-file'));
+            if (isNaN(batchIdx) || isNaN(fileIdx)) return;
+            imgBatches[batchIdx].files.splice(fileIdx, 1);
+            if (imgBatches[batchIdx].files.length === 0) {
+                var inp = imgBatches[batchIdx].input;
+                if (inp && inp.parentNode) inp.parentNode.remove();
+                imgBatches.splice(batchIdx, 1);
+            }
+            renderImagePreviews();
+        });
+
+        // ─── Acumulación de Videos ──────────────────────────────────
+        const vidDropzone = document.getElementById('videos-dropzone');
+        const vidInputsContainer = document.getElementById('videos-inputs');
+        const vidPreview = document.getElementById('videos-preview');
+        const vidCountLabel = document.getElementById('videos-count');
+        let vidBatches = []; // { input: HTMLInputElement, files: File[] }
+
+        function renderVideoPreviews() {
+            vidPreview.querySelectorAll('.preview-new').forEach(function (el) { el.remove(); });
+            var totalFiles = 0;
+            vidBatches.forEach(function (batch, batchIdx) {
+                totalFiles += batch.files.length;
+                batch.files.forEach(function (file, fileIdx) {
+                    var div = document.createElement('div');
+                    div.className = 'preview-new flex items-center gap-3 p-3 bg-base-200 rounded-xl border border-base-300';
+                    div.innerHTML = '\
+                        <div class="w-10 h-10 rounded-lg bg-base-100 flex items-center justify-center shrink-0">\
+                            <svg class="w-5 h-5 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>\
+                        </div>\
+                        <div class="min-w-0 flex-1">\
+                            <p class="text-sm text-base-content/80 truncate">' + file.name + '</p>\
+                            <p class="text-xs text-base-content/40">' + (file.size / 1024 / 1024).toFixed(1) + ' MB</p>\
+                        </div>\
+                        <button type="button" class="remove-vid-btn p-2 rounded-lg text-base-content/30 hover:text-error hover:bg-error/10 transition-all" data-batch="' + batchIdx + '" data-file="' + fileIdx + '">\
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>\
+                        </button>\
+                    ';
+                    vidPreview.appendChild(div);
+                });
+            });
+            vidCountLabel.textContent = 'MP4, WebM, MOV — ' + totalFiles + ' seleccionado' + (totalFiles !== 1 ? 's' : '');
+        }
+
+        function addVideoBatch() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.name = 'videos';
+            input.multiple = true;
+            input.accept = 'video/*';
+            input.className = 'hidden';
+            var wrapper = document.createElement('div');
+            wrapper.appendChild(input);
+            vidInputsContainer.appendChild(wrapper);
+
+            input.addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    vidBatches.push({ input: this, files: Array.from(this.files) });
+                    renderVideoPreviews();
+                } else {
+                    wrapper.remove();
+                }
+            });
+            input.click();
+        }
+
+        if (vidDropzone) {
+            vidDropzone.addEventListener('click', function (e) {
+                if (e.target.closest('.remove-vid-btn')) return;
+                e.preventDefault();
+                addVideoBatch();
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.remove-vid-btn');
+            if (!btn) return;
+            var batchIdx = parseInt(btn.getAttribute('data-batch'));
+            var fileIdx = parseInt(btn.getAttribute('data-file'));
+            if (isNaN(batchIdx) || isNaN(fileIdx)) return;
+            vidBatches[batchIdx].files.splice(fileIdx, 1);
+            if (vidBatches[batchIdx].files.length === 0) {
+                var inp = vidBatches[batchIdx].input;
+                if (inp && inp.parentNode) inp.parentNode.remove();
+                vidBatches.splice(batchIdx, 1);
+            }
+            renderVideoPreviews();
+        });
+
+        document.querySelectorAll('.marcar-eliminar-img').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const wrapper = btn.closest('[data-img-id]');
+                const imgId = wrapper.getAttribute('data-img-id');
+                const isMarked = wrapper.classList.contains('opacity-40');
+                if (isMarked) {
+                    wrapper.classList.remove('opacity-40', 'ring-2', 'ring-error');
+                    const hidden = wrapper.querySelector('input[name="eliminar_imagen"]');
+                    if (hidden) hidden.remove();
+                    btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Eliminar';
+                } else {
+                    wrapper.classList.add('opacity-40', 'ring-2', 'ring-error');
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'eliminar_imagen';
+                    input.value = imgId;
+                    wrapper.appendChild(input);
+                    btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Deshacer';
+                }
+            });
+        });
+
+        document.querySelectorAll('.marcar-eliminar-vid').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const wrapper = btn.closest('[data-vid-id]');
+                const vidId = wrapper.getAttribute('data-vid-id');
+                const isMarked = wrapper.classList.contains('opacity-40');
+                if (isMarked) {
+                    wrapper.classList.remove('opacity-40', 'ring-2', 'ring-error');
+                    const hidden = wrapper.querySelector('input[name="eliminar_video"]');
+                    if (hidden) hidden.remove();
+                    btn.classList.remove('text-error', 'bg-error/10');
+                    btn.classList.add('text-base-content/30');
+                } else {
+                    wrapper.classList.add('opacity-40', 'ring-2', 'ring-error');
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'eliminar_video';
+                    input.value = vidId;
+                    wrapper.appendChild(input);
+                    btn.classList.add('text-error', 'bg-error/10');
+                    btn.classList.remove('text-base-content/30');
+                }
+            });
+        });
+
+        // ─── Cloudinary Selections (producto-specific) ──────────────
+        let cloudinarySelections = [];
+        let videoCloudinarySelections = [];
+
+        function renderCloudinarySelections() {
+            var previewEl = currentTipo === 'video' ? vidPreview : imgPreview;
+            previewEl.querySelectorAll('.preview-cloudinary').forEach(function (el) { el.remove(); });
+            var arr = currentTipo === 'video' ? videoCloudinarySelections : cloudinarySelections;
+            var countLabel = currentTipo === 'video' ? vidCountLabel : document.getElementById('imagenes-count');
+            var labelPrefix = currentTipo === 'video' ? 'MP4, WebM, MOV' : 'PNG, JPG, WebP';
+
+            arr.forEach(function (sel) {
+                var div = document.createElement('div');
+                if (currentTipo === 'video') {
+                    div.className = 'preview-cloudinary flex items-center gap-3 p-3 bg-base-200 rounded-xl border border-primary/30';
+                    div.innerHTML = '\
+                        <div class="w-10 h-10 rounded-lg bg-base-100 flex items-center justify-center shrink-0">\
+                            <svg class="w-5 h-5 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>\
+                        </div>\
+                        <div class="min-w-0 flex-1">\
+                            <p class="text-sm text-base-content/80 truncate">' + sel.publicId + '</p>\
+                            <span class="text-[10px] font-bold text-primary/60">☁️ Cloudinary</span>\
+                        </div>\
+                        <button type="button" class="remove-cloudinary-btn p-2 rounded-lg text-base-content/30 hover:text-error hover:bg-error/10 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>\
+                    ';
+                } else {
+                    div.className = 'preview-cloudinary relative group aspect-square rounded-xl overflow-hidden border border-primary/30';
+                    div.innerHTML = '<img src="' + sel.url + '" class="w-full h-full object-cover"><div class="absolute top-0 left-0 bg-primary text-primary-content text-[10px] font-bold px-1.5 py-0.5 rounded-br-lg">☁️</div><button type="button" class="remove-cloudinary-btn absolute bottom-1 right-1 w-7 h-7 bg-error hover:bg-error/90 text-white rounded-full flex items-center justify-center text-xs shadow-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+                }
+                previewEl.appendChild(div);
+            });
+            var totalFiles = arr.length;
+            if (currentTipo === 'video') {
+                vidBatches.forEach(function (b) { totalFiles += b.files.length; });
+            } else {
+                imgBatches.forEach(function (b) { totalFiles += b.files.length; });
+            }
+            if (countLabel) countLabel.textContent = labelPrefix + ' — ' + totalFiles + ' seleccionada' + (totalFiles !== 1 ? 's' : '');
+        }
+
+        let currentTipo = 'imagen';
+
+        // ─── Init Cloudinary Browser (shared component) ─────────────
+        const cloudinaryBrowser = initCloudinaryBrowser({
+            onConfirm: function (result) {
+                currentTipo = result.tipo;
+                var isVideo = result.tipo === 'video';
+                var targetContainer = isVideo
+                    ? document.getElementById('cloudinary-video-url-inputs')
+                    : document.getElementById('cloudinary-url-inputs');
+                var targetArr = isVideo ? videoCloudinarySelections : cloudinarySelections;
+                var inputName = isVideo ? 'video_url' : 'imagen_url';
+                result.selected.forEach(function (pid) {
+                    var item = result.data[pid];
+                    if (!item) return;
+                    var inp = document.createElement('input');
+                    inp.type = 'hidden';
+                    inp.name = inputName;
+                    inp.value = pid;
+                    targetContainer.appendChild(inp);
+                    targetArr.push({ publicId: pid, url: item.url });
+                });
+                renderCloudinarySelections();
+            }
+        });
+
+        document.getElementById('btn-explorar-cloudinary').addEventListener('click', function (e) {
+            e.preventDefault();
+            currentTipo = 'imagen';
+            cloudinaryBrowser.open('imagen');
+        });
+
+        document.getElementById('btn-explorar-cloudinary-video').addEventListener('click', function (e) {
+            e.preventDefault();
+            currentTipo = 'video';
+            cloudinaryBrowser.open('video');
+        });
+
+        // ─── Remove cloudinary selection from form ──────────────────
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.remove-cloudinary-btn');
+            if (!btn) return;
+            var el = btn.closest('.preview-cloudinary');
+            if (!el) return;
+            var previewContainer = el.parentNode;
+            var items = previewContainer.querySelectorAll('.preview-cloudinary');
+            var idx = Array.from(items).indexOf(el);
+            if (idx === -1) return;
+            var sel, container, inputName;
+            if (previewContainer === vidPreview || previewContainer.closest('#videos-preview')) {
+                sel = videoCloudinarySelections[idx];
+                container = document.getElementById('cloudinary-video-url-inputs');
+                inputName = 'video_url';
+            } else {
+                sel = cloudinarySelections[idx];
+                container = document.getElementById('cloudinary-url-inputs');
+                inputName = 'imagen_url';
+            }
+            if (sel) {
+                var inputs = container.querySelectorAll('input[name="' + inputName + '"]');
+                for (var i = 0; i < inputs.length; i++) {
+                    if (inputs[i].value === sel.publicId) {
+                        inputs[i].remove();
+                        break;
+                    }
+                }
+                if (previewContainer === vidPreview || previewContainer.closest('#videos-preview')) {
+                    videoCloudinarySelections.splice(idx, 1);
+                } else {
+                    cloudinarySelections.splice(idx, 1);
+                }
+                renderCloudinarySelections();
+            }
+        });
+    });
+</script>
+{% endblock %}
