@@ -38,28 +38,19 @@ cloudinary.config(
     api_secret=os.getenv("API_SECRET")
 )
 
-# DEFAULT_FILE_STORAGE está comentado porque django-cloudinary-storage no está instalado.
-# CloudinaryField sube archivos directamente vía el SDK (cloudinary.uploader).
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'  
-
 # =========================
 # Aplicaciones instaladas
 # =========================
 INSTALLED_APPS = [
-    # Django apps
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Terceros
     "corsheaders",
     "rest_framework",
     "cloudinary",
     "tailwind",
-
-    # Apps propias
     'apiApp',
     "theme"
 ]
@@ -116,7 +107,6 @@ TEMPLATES = [
 # Base de datos
 # =========================
 if DEBUG:
-    # Desarrollo → SQLite
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -124,7 +114,6 @@ if DEBUG:
         }
     }
 else:
-    # Producción → Postgres (Railway)
     DATABASES = {
         "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
     }
@@ -151,18 +140,15 @@ USE_TZ = True
 # Archivos estáticos y media
 # =========================
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / "staticfiles" # 👈 siempre definido
-# if DEBUG:
-#     STATICFILES_DIRS = [BASE_DIR / "static"]
-# else:
-#     STATIC_ROOT = BASE_DIR / "staticfiles"
-#     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# ✅ CAMBIO: agregar STATICFILES_DIRS para que collectstatic encuentre el CSS de Tailwind
+STATICFILES_DIRS = [
+    BASE_DIR / "theme" / "static",
+]
+
 if not DEBUG:
-    
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-
-
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -174,15 +160,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # =========================
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
-
-
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").replace(" ", "").split(",")
-
-
 
 # IA
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -195,8 +177,6 @@ CACHES = {
     }
 }
 
-
 # TAILWIND
 TAILWIND_APP_NAME = "theme"
-# NPM ruta en windows
 NPM_BIN_PATH = r"npm.cmd"
