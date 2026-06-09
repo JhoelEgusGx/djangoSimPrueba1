@@ -40,7 +40,7 @@
         </footer>
     </div>
 
-    <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/50 hidden lg:hidden"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/50 opacity-0 pointer-events-none transition-opacity duration-300 lg:hidden"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -52,12 +52,12 @@
 
             function openSidebar() {
                 sidebar.classList.remove('-translate-x-full');
-                sidebarOverlay.classList.remove('hidden');
+                sidebarOverlay.classList.remove('opacity-0', 'pointer-events-none');
                 document.body.style.overflow = 'hidden';
             }
             function closeSidebar() {
                 sidebar.classList.add('-translate-x-full');
-                sidebarOverlay.classList.add('hidden');
+                sidebarOverlay.classList.add('opacity-0', 'pointer-events-none');
                 document.body.style.overflow = '';
             }
 

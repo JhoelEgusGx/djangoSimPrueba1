@@ -12,7 +12,7 @@ class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all().order_by('-fecha_ingreso', '-id')  # Ordenar por fecha de ingreso
     serializer_class = ProductoSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['nombre', 'categorias__nombre']
+    search_fields = ['nombre', 'descripcion', 'categorias__nombre']
 
 
 class TarifaViewSet(viewsets.ModelViewSet):
