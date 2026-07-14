@@ -17,7 +17,7 @@ class Producto(models.Model):
     descripcion = models.TextField()
     fecha_ingreso = models.DateTimeField(auto_now_add=True)  # 👈 Cambia DateField a DateTimeField, para inclui la hora
     cantidad = models.PositiveIntegerField(default=300)
-    mostrar_en_pagina = models.BooleanField(default=False)
+    mostrar_en_pagina = models.BooleanField(default=False) #esot se añadio#
     categorias = models.ManyToManyField(Categoria, related_name='productos')
 
     def __str__(self):
