@@ -40,6 +40,7 @@ def producto_list_api(request):
             'nombre': p.nombre,
             'descripcion': p.descripcion[:80],
             'cantidad': p.cantidad,
+            'mostrar_en_pagina': p.mostrar_en_pagina,
             'fecha_ingreso': p.fecha_ingreso.strftime('%d/%m/%Y'),
             'fecha_ingreso_iso': p.fecha_ingreso.isoformat(),
             'categorias': [{'id': c.id, 'nombre': c.nombre} for c in p.categorias.all()],
@@ -71,7 +72,8 @@ def producto_create(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
-        cantidad = request.POST.get('cantidad', 0)
+        cantidad = request.POST.get('cantidad', 300)
+        mostrar_en_pagina = request.POST.get('mostrar_en_pagina') == '1'
         categorias_ids = request.POST.getlist('categorias')
 
         if not nombre:
@@ -80,7 +82,8 @@ def producto_create(request):
             producto = Producto.objects.create(
                 nombre=nombre,
                 descripcion=descripcion or '',
-                cantidad=int(cantidad) if cantidad else 0,
+                cantidad=int(cantidad) if cantidad else 300,
+                mostrar_en_pagina=mostrar_en_pagina,
             )
             if categorias_ids:
                 producto.categorias.set(Categoria.objects.filter(id__in=categorias_ids))
@@ -114,7 +117,8 @@ def producto_update(request, pk):
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
-        cantidad = request.POST.get('cantidad', 0)
+        cantidad = request.POST.get('cantidad', 300)
+        mostrar_en_pagina = request.POST.get('mostrar_en_pagina') == '1'
         categorias_ids = request.POST.getlist('categorias')
 
         if not nombre:
@@ -122,7 +126,8 @@ def producto_update(request, pk):
         else:
             producto.nombre = nombre
             producto.descripcion = descripcion or ''
-            producto.cantidad = int(cantidad) if cantidad else 0
+            producto.cantidad = int(cantidad) if cantidad else 300
+            producto.mostrar_en_pagina = mostrar_en_pagina
             producto.save()
             producto.categorias.set(Categoria.objects.filter(id__in=categorias_ids))
 
