@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
 
-from apiApp.models import Producto, Categoria
+from apiApp.models import Producto, Categoria, Proveedor
 from .utils import staff_required, _guardar_tarifas, _guardar_imagenes_y_videos
 
 
@@ -15,7 +15,7 @@ def producto_list_api(request):
     fecha_desde = request.GET.get('fecha_desde', '').strip()
     fecha_hasta = request.GET.get('fecha_hasta', '').strip()
 
-    productos = Producto.objects.prefetch_related('categorias', 'imagenes').all().order_by('-fecha_ingreso')
+    productos = Producto.objects.prefetch_related('categorias', 'imagenes', 'tarifas').select_related('proveedor').filter(activo=True).order_by('-fecha_ingreso')
 
     if q:
         productos = productos.filter(nombre__icontains=q)
@@ -35,6 +35,7 @@ def producto_list_api(request):
     data = []
     for p in productos:
         primera_imagen = p.imagenes.first()
+        primera_tarifa = p.tarifas.first()
         data.append({
             'id': p.id,
             'nombre': p.nombre,
@@ -45,6 +46,8 @@ def producto_list_api(request):
             'fecha_ingreso_iso': p.fecha_ingreso.isoformat(),
             'categorias': [{'id': c.id, 'nombre': c.nombre} for c in p.categorias.all()],
             'imagen_url': primera_imagen.imagen.url if primera_imagen and primera_imagen.imagen else None,
+            'precio': str(primera_tarifa.precio_unitario) if primera_tarifa else None,
+            'proveedor': p.proveedor.nombre if p.proveedor else None,
         })
 
     return JsonResponse({'data': data})
@@ -55,13 +58,15 @@ def producto_list_api(request):
 def producto_list(request):
     query = request.GET.get('q', '')
     categorias = Categoria.objects.all()
-    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes').all().order_by('-fecha_ingreso')
+    proveedores = Proveedor.objects.all().order_by('nombre')
+    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes').select_related('proveedor').filter(activo=True).order_by('-fecha_ingreso')
     if query:
         productos = productos.filter(nombre__icontains=query)
     return render(request, 'dashboard/pages/productos.html', {
         'productos': productos,
         'query': query,
         'categorias': categorias,
+        'proveedores': proveedores,
     })
 
 
@@ -69,21 +74,27 @@ def producto_list(request):
 @user_passes_test(staff_required)
 def producto_create(request):
     categorias = Categoria.objects.all()
+    proveedores = Proveedor.objects.all().order_by('nombre')
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
         cantidad = request.POST.get('cantidad', 300)
         mostrar_en_pagina = request.POST.get('mostrar_en_pagina') == '1'
         categorias_ids = request.POST.getlist('categorias')
+        proveedor_id = request.POST.get('proveedor')
 
         if not nombre:
             messages.error(request, 'El nombre es obligatorio.')
         else:
+            proveedor = None
+            if proveedor_id:
+                proveedor = Proveedor.objects.filter(id=proveedor_id).first()
             producto = Producto.objects.create(
                 nombre=nombre,
                 descripcion=descripcion or '',
                 cantidad=int(cantidad) if cantidad else 300,
                 mostrar_en_pagina=mostrar_en_pagina,
+                proveedor=proveedor,
             )
             if categorias_ids:
                 producto.categorias.set(Categoria.objects.filter(id__in=categorias_ids))
@@ -101,6 +112,7 @@ def producto_create(request):
 
     return render(request, 'dashboard/pages/producto_form.html', {
         'categorias': categorias,
+        'proveedores': proveedores,
         'producto': None,
         'tarifas': [],
     })
@@ -110,24 +122,30 @@ def producto_create(request):
 @user_passes_test(staff_required)
 def producto_update(request, pk):
     producto = get_object_or_404(
-        Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'videos'),
+        Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'videos').select_related('proveedor'),
         pk=pk
     )
     categorias = Categoria.objects.all()
+    proveedores = Proveedor.objects.all().order_by('nombre')
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion')
         cantidad = request.POST.get('cantidad', 300)
         mostrar_en_pagina = request.POST.get('mostrar_en_pagina') == '1'
         categorias_ids = request.POST.getlist('categorias')
+        proveedor_id = request.POST.get('proveedor')
 
         if not nombre:
             messages.error(request, 'El nombre es obligatorio.')
         else:
+            proveedor = None
+            if proveedor_id:
+                proveedor = Proveedor.objects.filter(id=proveedor_id).first()
             producto.nombre = nombre
             producto.descripcion = descripcion or ''
             producto.cantidad = int(cantidad) if cantidad else 300
             producto.mostrar_en_pagina = mostrar_en_pagina
+            producto.proveedor = proveedor
             producto.save()
             producto.categorias.set(Categoria.objects.filter(id__in=categorias_ids))
 
@@ -140,6 +158,7 @@ def producto_update(request, pk):
 
     return render(request, 'dashboard/pages/producto_form.html', {
         'categorias': categorias,
+        'proveedores': proveedores,
         'producto': producto,
         'tarifas': producto.tarifas.all(),
     })
@@ -151,9 +170,41 @@ def producto_delete(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
     if request.method == 'POST':
         nombre = producto.nombre
-        producto.delete()
-        messages.success(request, f'Producto "{nombre}" eliminado correctamente.')
+        producto.activo = False
+        producto.save()
+        messages.success(request, f'Producto "{nombre}" archivado correctamente.')
         return redirect('producto_list')
     return render(request, 'dashboard/pages/productos.html', {
         'error': 'Método no permitido.'
     })
+
+
+@login_required
+@user_passes_test(staff_required)
+def papelera_list(request):
+    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes').select_related('proveedor').filter(activo=False).order_by('-fecha_ingreso')
+    return render(request, 'dashboard/pages/papelera.html', {
+        'productos': productos,
+    })
+
+
+@login_required
+@user_passes_test(staff_required)
+def papelera_restore(request, pk):
+    producto = get_object_or_404(Producto, pk=pk, activo=False)
+    if request.method == 'POST':
+        producto.activo = True
+        producto.save()
+        messages.success(request, f'Producto "{producto.nombre}" restaurado correctamente.')
+    return redirect('papelera_list')
+
+
+@login_required
+@user_passes_test(staff_required)
+def papelera_delete_permanente(request, pk):
+    producto = get_object_or_404(Producto, pk=pk, activo=False)
+    if request.method == 'POST':
+        nombre = producto.nombre
+        producto.delete()
+        messages.success(request, f'Producto "{nombre}" eliminado permanentemente.')
+    return redirect('papelera_list')

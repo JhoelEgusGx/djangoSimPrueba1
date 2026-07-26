@@ -6,13 +6,16 @@ from .producto_views import (
 )
 from .metodo_pago_views import MetodoPagoViewSet
 from .pedido_views import PedidoViewSet, PedidoItemViewSet
+from .proveedor_views import ProveedorViewSet
 from .admin import (
     login_view,
     cloudinary_imagenes_api,
     cloudinary_imagenes_delete,
     dashboard_home,
     producto_list, producto_list_api, producto_create, producto_update, producto_delete,
+    papelera_list, papelera_restore, papelera_delete_permanente,
     categoria_list, categoria_create, categoria_update, categoria_delete,
     pedido_list, pedido_list_api, pedido_detail, pedido_delete,
     pago_list, pago_create, pago_update, pago_delete,
+    proveedor_list, proveedor_create, proveedor_update, proveedor_delete,
 )

@@ -1,0 +1,114 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Proveedores — Gobady Perú Admin{% endblock %}
+{% block breadcrumb %}Proveedores{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-base-content tracking-tight">Proveedores</h2>
+            <p class="text-base-content/50 text-sm mt-1">{{ proveedores.count }} proveedor{{ proveedores.count|pluralize:'es' }}</p>
+        </div>
+        <a href="{% url 'proveedor_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-focus text-primary-content font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Nuevo Proveedor
+        </a>
+    </div>
+
+    <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+        <div class="block md:hidden p-4 space-y-3">
+            {% for proveedor in proveedores %}
+                <div class="bg-base-200/50 border border-base-300 rounded-xl p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <span class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-lg shrink-0">🚚</span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-base-content">{{ proveedor.nombre }}</p>
+                            {% if proveedor.ubicacion %}
+                                <p class="text-xs text-base-content/50 mt-0.5 truncate max-w-[200px]">{{ proveedor.ubicacion }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0 ml-3">
+                        <a href="{% url 'proveedor_update' proveedor.id %}" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Editar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </a>
+                        <form method="post" action="{% url 'proveedor_delete' proveedor.id %}" class="inline form-eliminar" data-nombre="{{ proveedor.nombre }}">
+                            {% csrf_token %}
+                            <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center py-12">
+                    <p class="text-base-content/40 text-sm">No hay proveedores registrados aún.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-base-300 bg-base-200/50">
+                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Nombre</th>
+                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Ubicación</th>
+                        <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-300/50">
+                    {% for proveedor in proveedores %}
+                        <tr class="hover:bg-base-200/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-lg bg-base-200 flex items-center justify-center text-sm">🚚</span>
+                                    <span class="text-sm font-medium text-base-content">{{ proveedor.nombre }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-base-content/60">
+                                {% if proveedor.ubicacion %}{{ proveedor.ubicacion }}{% else %}<span class="text-base-content/30">—</span>{% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{% url 'proveedor_update' proveedor.id %}" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Editar">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </a>
+                                    <form method="post" action="{% url 'proveedor_delete' proveedor.id %}" class="inline form-eliminar" data-nombre="{{ proveedor.nombre }}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-12 text-center">
+                                <p class="text-base-content/40 text-sm">No hay proveedores registrados aún.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function setupDeleteConfirmation(container) {
+        container.addEventListener('submit', function (e) {
+            var form = e.target.closest('.form-eliminar');
+            if (!form) return;
+            var nombre = form.getAttribute('data-nombre');
+            if (!confirm('¿Eliminar el proveedor "' + nombre + '"?')) {
+                e.preventDefault();
+            }
+        });
+    }
+    setupDeleteConfirmation(document.querySelector('.block.md\\:hidden'));
+    setupDeleteConfirmation(document.querySelector('.hidden.md\\:block.overflow-x-auto tbody'));
+});
+</script>
+{% endblock %}

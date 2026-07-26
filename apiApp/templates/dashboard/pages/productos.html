@@ -77,12 +77,16 @@ input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
                             <p class="text-xs text-base-content/50 mt-0.5">{{ producto.descripcion|truncatechars:60 }}</p>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        {% for cat in producto.categorias.all %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-300/50 text-base-content/70">{{ cat.nombre }}</span>
-                        {% empty %}
-                            <span class="text-xs text-base-content/40">—</span>
-                        {% endfor %}
+                    <div class="flex items-center gap-3 text-xs text-base-content/60">
+                        {% with primera_tarifa=producto.tarifas.first %}
+                            {% if primera_tarifa %}
+                                <span>S/. {{ primera_tarifa.precio_unitario }}</span>
+                            {% endif %}
+                        {% endwith %}
+                        {% if producto.proveedor %}
+                            <span class="text-base-content/40">|</span>
+                            <span>{{ producto.proveedor.nombre }}</span>
+                        {% endif %}
                     </div>
                     <div class="flex items-center justify-between pt-1">
                         <div class="flex items-center gap-3">
@@ -97,8 +101,8 @@ input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
                             </a>
                             <form method="post" action="{% url 'producto_delete' producto.id %}" class="inline form-eliminar" data-nombre="{{ producto.nombre|escape }}">
                                 {% csrf_token %}
-                                <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-warning hover:bg-warning/10 transition-all" title="Archivar en papelera">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
                                 </button>
                             </form>
                         </div>
@@ -116,7 +120,8 @@ input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
                 <thead>
                     <tr class="border-b border-base-300 bg-base-200/50">
                         <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Producto</th>
-                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden lg:table-cell">Categorías</th>
+                        <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden sm:table-cell">Precio</th>
+                        <th class="text-left text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden lg:table-cell">Proveedor</th>
                         <th class="text-center text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Stock</th>
                         <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4 hidden sm:table-cell">Ingreso</th>
                         <th class="text-right text-xs font-semibold text-base-content/50 uppercase tracking-wider px-6 py-4">Acciones</th>
@@ -142,14 +147,21 @@ input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 hidden lg:table-cell">
-                                <div class="flex flex-wrap gap-1.5">
-                                    {% for cat in producto.categorias.all %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-200 text-base-content/60">{{ cat.nombre }}</span>
-                                    {% empty %}
-                                        <span class="text-xs text-base-content/40">—</span>
-                                    {% endfor %}
-                                </div>
+                            <td class="px-6 py-4 text-right text-sm text-base-content/70 hidden sm:table-cell">
+                                {% with primera_tarifa=producto.tarifas.first %}
+                                    {% if primera_tarifa %}
+                                        S/. {{ primera_tarifa.precio_unitario }}
+                                    {% else %}
+                                        <span class="text-base-content/30">—</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-base-content/60 hidden lg:table-cell">
+                                {% if producto.proveedor %}
+                                    {{ producto.proveedor.nombre }}
+                                {% else %}
+                                    <span class="text-base-content/30">—</span>
+                                {% endif %}
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {% if producto.cantidad == 0 %}bg-error/10 text-error{% elif producto.cantidad <= 5 %}bg-warning/10 text-warning{% else %}bg-success/10 text-success{% endif %}">
@@ -164,8 +176,8 @@ input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
                                     </a>
                                     <form method="post" action="{% url 'producto_delete' producto.id %}" class="inline form-eliminar" data-nombre="{{ producto.nombre|escape }}">
                                         {% csrf_token %}
-                                        <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        <button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-warning hover:bg-warning/10 transition-all" title="Archivar en papelera">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
                                         </button>
                                     </form>
                                 </div>
@@ -173,7 +185,7 @@ input[type="date"]:valid::-webkit-datetime-edit { color: inherit; }
                         </tr>
                     {% empty %}
                         <tr id="fila-vacia">
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="6" class="px-6 py-12 text-center">
                                 <p id="mensaje-vacio" class="text-base-content/40 text-sm">{% if query %}No se encontraron productos para "{{ query }}"{% else %}No hay productos registrados aún.{% endif %}</p>
                             </td>
                         </tr>
@@ -195,9 +207,8 @@ function buildCardHtml(p) {
         ? '<img src="' + p.imagen_url + '" alt="' + p.nombre + '" class="w-full h-full object-cover">'
         : '<span class="text-base-content/40">📦</span>';
     const stockClass = p.cantidad === 0 ? 'bg-error/10 text-error' : (p.cantidad <= 5 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success');
-    const catsHtml = p.categorias.length
-        ? p.categorias.map(function(c) { return '<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-300/50 text-base-content/70">' + c.nombre + '</span>'; }).join('')
-        : '<span class="text-xs text-base-content/40">—</span>';
+    const precioHtml = p.precio ? '<span>S/. ' + p.precio + '</span>' : '';
+    const proveedorHtml = p.proveedor ? '<span class="text-base-content/40">|</span><span>' + p.proveedor + '</span>' : '';
     const editUrl = '{% url "producto_update" 0 %}'.replace('/0/', '/' + p.id + '/');
     const deleteUrl = '{% url "producto_delete" 0 %}'.replace('/0/', '/' + p.id + '/');
 
@@ -206,7 +217,7 @@ function buildCardHtml(p) {
         '<div class="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-lg overflow-hidden shrink-0">' + imgHtml + '</div>' +
         '<div class="min-w-0 flex-1"><p class="text-sm font-semibold text-base-content">' + p.nombre + '</p>' +
         '<p class="text-xs text-base-content/50 mt-0.5">' + (p.descripcion || '') + '</p></div></div>' +
-        '<div class="flex flex-wrap gap-1.5">' + catsHtml + '</div>' +
+        '<div class="flex items-center gap-3 text-xs text-base-content/60">' + precioHtml + proveedorHtml + '</div>' +
         '<div class="flex items-center justify-between pt-1">' +
         '<div class="flex items-center gap-3">' +
         '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ' + stockClass + '">' + p.cantidad + ' uds.</span>' +
@@ -215,8 +226,8 @@ function buildCardHtml(p) {
         '<a href="' + editUrl + '" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Editar">' +
         '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></a>' +
         '<form method="post" action="' + deleteUrl + '" class="inline form-eliminar" data-nombre="' + p.nombre.replace(/"/g, '&quot;') + '">{% csrf_token %}' +
-        '<button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar">' +
-        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>' +
+        '<button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-warning hover:bg-warning/10 transition-all" title="Archivar">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></button></form>' +
         '</div></div></div>';
 }
 
@@ -225,20 +236,24 @@ function buildRowHtml(p) {
     const imgHtml = p.imagen_url
         ? '<img src="' + p.imagen_url + '" alt="' + p.nombre + '" class="w-full h-full object-cover">'
         : '<span class="text-base-content/40">📦</span>';
-    const catsHtml = p.categorias.length
-        ? p.categorias.map(function(c) { return '<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-base-200 text-base-content/60">' + c.nombre + '</span>'; }).join('')
-        : '<span class="text-xs text-base-content/40">—</span>';
+    const precioHtml = p.precio
+        ? '<td class="px-6 py-4 text-right text-sm text-base-content/70 hidden sm:table-cell">S/. ' + p.precio + '</td>'
+        : '<td class="px-6 py-4 text-right text-sm hidden sm:table-cell"><span class="text-base-content/30">—</span></td>';
+    const proveedorHtml = p.proveedor
+        ? '<td class="px-6 py-4 text-sm text-base-content/60 hidden lg:table-cell">' + p.proveedor + '</td>'
+        : '<td class="px-6 py-4 text-sm text-base-content/30 hidden lg:table-cell">—</td>';
     const editUrl = '{% url "producto_update" 0 %}'.replace('/0/', '/' + p.id + '/');
     const deleteUrl = '{% url "producto_delete" 0 %}'.replace('/0/', '/' + p.id + '/');
 
     return '<tr class="hover:bg-base-200/30 transition-colors" data-id="' + p.id + '">' +
         '<td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-lg overflow-hidden shrink-0">' + imgHtml + '</div><div class="min-w-0"><p class="text-sm font-medium text-base-content truncate max-w-[200px]">' + p.nombre + '</p><p class="text-xs text-base-content/50 truncate max-w-[200px]">' + (p.descripcion || '') + '</p></div></div></td>' +
-        '<td class="px-6 py-4 hidden lg:table-cell"><div class="flex flex-wrap gap-1.5">' + catsHtml + '</div></td>' +
+        precioHtml +
+        proveedorHtml +
         '<td class="px-6 py-4 text-center"><span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ' + stockClass + '">' + p.cantidad + '</span></td>' +
         '<td class="px-6 py-4 text-right text-sm text-base-content/50 hidden sm:table-cell">' + p.fecha_ingreso + '</td>' +
         '<td class="px-6 py-4 text-right"><div class="flex items-center justify-end gap-2">' +
         '<a href="' + editUrl + '" class="p-2 rounded-lg text-base-content/40 hover:text-primary hover:bg-primary/10 transition-all" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></a>' +
-        '<form method="post" action="' + deleteUrl + '" class="inline form-eliminar" data-nombre="' + p.nombre.replace(/"/g, '&quot;') + '">{% csrf_token %}<button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-error hover:bg-error/10 transition-all" title="Eliminar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>' +
+        '<form method="post" action="' + deleteUrl + '" class="inline form-eliminar" data-nombre="' + p.nombre.replace(/"/g, '&quot;') + '">{% csrf_token %}<button type="submit" class="p-2 rounded-lg text-base-content/40 hover:text-warning hover:bg-warning/10 transition-all" title="Archivar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></button></form>' +
         '</div></td></tr>';
 }
 
@@ -269,7 +284,7 @@ function cargarProductos() {
 
             if (total === 0) {
                 var emptyMsg = 'No se encontraron productos' + (q ? ' para "' + q + '"' : '') + '.';
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center"><p class="text-base-content/40 text-sm">' + emptyMsg + '</p></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center"><p class="text-base-content/40 text-sm">' + emptyMsg + '</p></td></tr>';
                 cardsContainer.innerHTML = '<div class="text-center py-12"><p class="text-base-content/40 text-sm">' + emptyMsg + '</p></div>';
                 return;
             }

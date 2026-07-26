@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from ..models import ImagenProducto, VideoProducto, Producto
+from ..models import ImagenProducto, VideoProducto, Producto, Proveedor
 from .categoria_serializers import CategoriaSerializer, TarifaSerializer
+from .proveedor_serializers import ProveedorSerializer
 
 
 class ImagenProductoSerializer(serializers.ModelSerializer):
@@ -58,6 +59,11 @@ class ProductoSerializer(serializers.ModelSerializer):
     tarifas = TarifaSerializer(many=True, read_only=True)
     imagenes = ImagenProductoSerializer(many=True, read_only=True)
     videos = VideoProductoSerializer(many=True, read_only=True)
+    proveedor = ProveedorSerializer(read_only=True)
+    proveedor_id = serializers.PrimaryKeyRelatedField(
+        queryset=Proveedor.objects.all(),
+        write_only=True, source='proveedor', required=False, allow_null=True
+    )
 
     class Meta:
         model = Producto

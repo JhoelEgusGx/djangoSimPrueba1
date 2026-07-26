@@ -11,14 +11,24 @@ class Categoria(models.Model):
     def __str__(self):
         return self.nombre
 
+# ---------------------------
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=200)
+    ubicacion = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
+
 # ---------------------------✅
 class Producto(models.Model):
     nombre = models.CharField(max_length=255)
     descripcion = models.TextField()
-    fecha_ingreso = models.DateTimeField(auto_now_add=True)  # 👈 Cambia DateField a DateTimeField, para inclui la hora
+    fecha_ingreso = models.DateTimeField(auto_now_add=True)
     cantidad = models.PositiveIntegerField(default=300)
-    mostrar_en_pagina = models.BooleanField(default=False) #esot se añadio#
+    mostrar_en_pagina = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
     categorias = models.ManyToManyField(Categoria, related_name='productos')
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos')
 
     def __str__(self):
         return self.nombre

@@ -63,6 +63,19 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-sm font-medium text-base-content/70 mb-1.5">Proveedor (opcional)</label>
+                <select name="proveedor" id="proveedor"
+                        class="w-full px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                    <option value="">Sin proveedor</option>
+                    {% for prov in proveedores %}
+                        <option value="{{ prov.id }}" {% if producto and producto.proveedor and producto.proveedor.id == prov.id %}selected{% endif %}>
+                            {{ prov.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="border-t border-base-300 pt-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-bold text-base-content">Tarifas</h3>

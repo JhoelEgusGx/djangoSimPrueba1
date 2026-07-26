@@ -9,7 +9,7 @@ from ..serializers import (
 
 
 class ProductoViewSet(viewsets.ModelViewSet):
-    queryset = Producto.objects.all().order_by('-fecha_ingreso', '-id')  # Ordenar por fecha de ingreso
+    queryset = Producto.objects.filter(activo=True).order_by('-fecha_ingreso', '-id')
     serializer_class = ProductoSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['nombre', 'descripcion', 'categorias__nombre']
