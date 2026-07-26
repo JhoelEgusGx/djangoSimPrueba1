@@ -64,16 +64,33 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-base-content/70 mb-1.5">Proveedor (opcional)</label>
-                <select name="proveedor" id="proveedor"
-                        class="w-full px-4 py-2.5 bg-base-200 border border-base-300 rounded-xl text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
-                    <option value="">Sin proveedor</option>
-                    {% for prov in proveedores %}
-                        <option value="{{ prov.id }}" {% if producto and producto.proveedor and producto.proveedor.id == prov.id %}selected{% endif %}>
-                            {{ prov.nombre }}
-                        </option>
-                    {% endfor %}
-                </select>
+                <label class="block text-sm font-medium text-base-content/70 mb-1.5">Proveedores (opcional)</label>
+                <div class="relative mb-2">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="proveedores-search" placeholder="Buscar proveedor y presionar Enter..."
+                           autocomplete="off"
+                           class="w-full pl-10 pr-4 py-2 bg-base-200 border border-base-300 rounded-lg text-sm text-base-content placeholder-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                    <div id="proveedores-suggestions" class="absolute top-full mt-1 left-0 w-full bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 hidden max-h-48 overflow-y-auto"></div>
+                </div>
+                <div id="proveedores-chips" class="flex flex-wrap gap-2 mb-2">
+                    {% if producto %}
+                        {% for prov in producto.proveedores.all %}
+                            <span class="proveedor-chip inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg" data-id="{{ prov.id }}">
+                                {{ prov.nombre }}
+                                <button type="button" class="remove-proveedor-chip hover:text-error transition-colors" title="Eliminar">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div id="proveedores-hidden-inputs">
+                    {% if producto %}
+                        {% for prov in producto.proveedores.all %}
+                            <input type="hidden" name="proveedores" value="{{ prov.id }}">
+                        {% endfor %}
+                    {% endif %}
+                </div>
             </div>
 
             <div class="border-t border-base-300 pt-6">
@@ -274,6 +291,132 @@
                 });
             });
         }
+
+        // ─── Proveedores Autocomplete con Chips ─────────────────────
+        const provSearch = document.getElementById('proveedores-search');
+        const provSuggestions = document.getElementById('proveedores-suggestions');
+        const provChips = document.getElementById('proveedores-chips');
+        const provHiddenInputs = document.getElementById('proveedores-hidden-inputs');
+        let provSelectedIds = [];
+
+        function renderProvChips() {
+            provChips.innerHTML = '';
+            provHiddenInputs.innerHTML = '';
+            provSelectedIds.forEach(function (id) {
+                var prov = provCache[id];
+                if (!prov) return;
+                var chip = document.createElement('span');
+                chip.className = 'proveedor-chip inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg';
+                chip.setAttribute('data-id', id);
+                chip.innerHTML = prov.nombre + ' <button type="button" class="remove-proveedor-chip hover:text-error transition-colors" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+                provChips.appendChild(chip);
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'proveedores';
+                inp.value = id;
+                provHiddenInputs.appendChild(inp);
+            });
+        }
+
+        function addProveedor(id, nombre) {
+            if (provSelectedIds.indexOf(id) !== -1) return;
+            provCache[id] = { id: id, nombre: nombre };
+            provSelectedIds.push(id);
+            renderProvChips();
+        }
+
+        var provCache = {};
+        {% if producto %}
+            {% for prov in producto.proveedores.all %}
+                provCache[{{ prov.id }}] = { id: {{ prov.id }}, nombre: '{{ prov.nombre|escapejs }}' };
+            {% endfor %}
+        {% endif %}
+
+        var provSearchTimer;
+        if (provSearch) {
+            provSearch.addEventListener('input', function () {
+                var q = this.value.trim();
+                clearTimeout(provSearchTimer);
+                if (q.length < 1) {
+                    provSuggestions.classList.add('hidden');
+                    return;
+                }
+                provSearchTimer = setTimeout(function () {
+                    fetch('/api/proveedores/?search=' + encodeURIComponent(q))
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            var results = Array.isArray(data) ? data : (data.results || []);
+                            results = results.filter(function (p) {
+                                return provSelectedIds.indexOf(p.id) === -1;
+                            });
+                            if (results.length === 0) {
+                                provSuggestions.innerHTML = '<div class="px-4 py-3 text-sm text-base-content/40 text-center">No se encontraron proveedores</div>';
+                                provSuggestions.classList.remove('hidden');
+                                return;
+                            }
+                            var html = '';
+                            results.forEach(function (p) {
+                                provCache[p.id] = p;
+                                html += '<div class="prov-suggestion px-4 py-2.5 hover:bg-base-200 cursor-pointer text-sm text-base-content transition-colors" data-id="' + p.id + '" data-nombre="' + (p.nombre || '').replace(/"/g, '&quot;') + '">' + (p.nombre || '') + '</div>';
+                            });
+                            provSuggestions.innerHTML = html;
+                            provSuggestions.classList.remove('hidden');
+                        })
+                        .catch(function () {
+                            provSuggestions.classList.add('hidden');
+                        });
+                }, 250);
+            });
+
+            provSearch.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    var items = provSuggestions.querySelectorAll('.prov-suggestion');
+                    if (items.length === 1) {
+                        var id = parseInt(items[0].getAttribute('data-id'));
+                        var nombre = items[0].getAttribute('data-nombre');
+                        addProveedor(id, nombre);
+                        provSearch.value = '';
+                        provSuggestions.classList.add('hidden');
+                    } else if (items.length > 1) {
+                        var first = items[0];
+                        var id = parseInt(first.getAttribute('data-id'));
+                        var nombre = first.getAttribute('data-nombre');
+                        addProveedor(id, nombre);
+                        provSearch.value = '';
+                        provSuggestions.classList.add('hidden');
+                    }
+                }
+                if (e.key === 'Escape') {
+                    provSuggestions.classList.add('hidden');
+                }
+            });
+
+            provSuggestions.addEventListener('click', function (e) {
+                var item = e.target.closest('.prov-suggestion');
+                if (!item) return;
+                var id = parseInt(item.getAttribute('data-id'));
+                var nombre = item.getAttribute('data-nombre');
+                addProveedor(id, nombre);
+                provSearch.value = '';
+                provSuggestions.classList.add('hidden');
+            });
+        }
+
+        provChips.addEventListener('click', function (e) {
+            var btn = e.target.closest('.remove-proveedor-chip');
+            if (!btn) return;
+            var chip = btn.closest('.proveedor-chip');
+            var id = parseInt(chip.getAttribute('data-id'));
+            provSelectedIds = provSelectedIds.filter(function (i) { return i !== id; });
+            renderProvChips();
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('#proveedores-search') && !e.target.closest('#proveedores-suggestions')) {
+                provSuggestions.classList.add('hidden');
+            }
+        });
 
         // ─── Acumulación de Imágenes ────────────────────────────────
         const imgDropzone = document.getElementById('imagenes-dropzone');

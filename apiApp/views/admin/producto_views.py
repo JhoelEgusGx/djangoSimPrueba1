@@ -15,7 +15,7 @@ def producto_list_api(request):
     fecha_desde = request.GET.get('fecha_desde', '').strip()
     fecha_hasta = request.GET.get('fecha_hasta', '').strip()
 
-    productos = Producto.objects.prefetch_related('categorias', 'imagenes', 'tarifas').select_related('proveedor').filter(activo=True).order_by('-fecha_ingreso')
+    productos = Producto.objects.prefetch_related('categorias', 'imagenes', 'tarifas', 'proveedores').filter(activo=True).order_by('-fecha_ingreso')
 
     if q:
         productos = productos.filter(nombre__icontains=q)
@@ -47,7 +47,7 @@ def producto_list_api(request):
             'categorias': [{'id': c.id, 'nombre': c.nombre} for c in p.categorias.all()],
             'imagen_url': primera_imagen.imagen.url if primera_imagen and primera_imagen.imagen else None,
             'precio': str(primera_tarifa.precio_unitario) if primera_tarifa else None,
-            'proveedor': p.proveedor.nombre if p.proveedor else None,
+            'proveedores': [{'id': pr.id, 'nombre': pr.nombre} for pr in p.proveedores.all()],
         })
 
     return JsonResponse({'data': data})
@@ -59,7 +59,7 @@ def producto_list(request):
     query = request.GET.get('q', '')
     categorias = Categoria.objects.all()
     proveedores = Proveedor.objects.all().order_by('nombre')
-    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes').select_related('proveedor').filter(activo=True).order_by('-fecha_ingreso')
+    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'proveedores').filter(activo=True).order_by('-fecha_ingreso')
     if query:
         productos = productos.filter(nombre__icontains=query)
     return render(request, 'dashboard/pages/productos.html', {
@@ -81,23 +81,21 @@ def producto_create(request):
         cantidad = request.POST.get('cantidad', 300)
         mostrar_en_pagina = request.POST.get('mostrar_en_pagina') == '1'
         categorias_ids = request.POST.getlist('categorias')
-        proveedor_id = request.POST.get('proveedor')
+        proveedores_ids = request.POST.getlist('proveedores')
 
         if not nombre:
             messages.error(request, 'El nombre es obligatorio.')
         else:
-            proveedor = None
-            if proveedor_id:
-                proveedor = Proveedor.objects.filter(id=proveedor_id).first()
             producto = Producto.objects.create(
                 nombre=nombre,
                 descripcion=descripcion or '',
                 cantidad=int(cantidad) if cantidad else 300,
                 mostrar_en_pagina=mostrar_en_pagina,
-                proveedor=proveedor,
             )
             if categorias_ids:
                 producto.categorias.set(Categoria.objects.filter(id__in=categorias_ids))
+            if proveedores_ids:
+                producto.proveedores.set(Proveedor.objects.filter(id__in=proveedores_ids))
 
             _guardar_tarifas(request, producto)
             _guardar_imagenes_y_videos(request, producto)
@@ -122,7 +120,7 @@ def producto_create(request):
 @user_passes_test(staff_required)
 def producto_update(request, pk):
     producto = get_object_or_404(
-        Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'videos').select_related('proveedor'),
+        Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'videos', 'proveedores'),
         pk=pk
     )
     categorias = Categoria.objects.all()
@@ -133,21 +131,18 @@ def producto_update(request, pk):
         cantidad = request.POST.get('cantidad', 300)
         mostrar_en_pagina = request.POST.get('mostrar_en_pagina') == '1'
         categorias_ids = request.POST.getlist('categorias')
-        proveedor_id = request.POST.get('proveedor')
+        proveedores_ids = request.POST.getlist('proveedores')
 
         if not nombre:
             messages.error(request, 'El nombre es obligatorio.')
         else:
-            proveedor = None
-            if proveedor_id:
-                proveedor = Proveedor.objects.filter(id=proveedor_id).first()
             producto.nombre = nombre
             producto.descripcion = descripcion or ''
             producto.cantidad = int(cantidad) if cantidad else 300
             producto.mostrar_en_pagina = mostrar_en_pagina
-            producto.proveedor = proveedor
             producto.save()
             producto.categorias.set(Categoria.objects.filter(id__in=categorias_ids))
+            producto.proveedores.set(Proveedor.objects.filter(id__in=proveedores_ids))
 
             producto.tarifas.all().delete()
             _guardar_tarifas(request, producto)
@@ -182,7 +177,7 @@ def producto_delete(request, pk):
 @login_required
 @user_passes_test(staff_required)
 def papelera_list(request):
-    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes').select_related('proveedor').filter(activo=False).order_by('-fecha_ingreso')
+    productos = Producto.objects.prefetch_related('categorias', 'tarifas', 'imagenes', 'proveedores').filter(activo=False).order_by('-fecha_ingreso')
     return render(request, 'dashboard/pages/papelera.html', {
         'productos': productos,
     })

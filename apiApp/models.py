@@ -28,7 +28,7 @@ class Producto(models.Model):
     mostrar_en_pagina = models.BooleanField(default=False)
     activo = models.BooleanField(default=True)
     categorias = models.ManyToManyField(Categoria, related_name='productos')
-    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos')
+    proveedores = models.ManyToManyField(Proveedor, blank=True, related_name='productos')
 
     def __str__(self):
         return self.nombre
