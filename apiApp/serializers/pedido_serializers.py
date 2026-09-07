@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from ..models import Pedido, PedidoItem, Producto, MetodoPago
 from .producto_serializers import ProductoSerializer
@@ -61,10 +62,12 @@ class PedidoSerializer(serializers.ModelSerializer):
 
         dni = data.get('dni', '')
         telefono = data.get('telefono', '')
-        if dni and len(dni) != 8:
-            raise serializers.ValidationError("El DNI debe tener 8 dígitos.")
-        if telefono and len(telefono) != 9:
-            raise serializers.ValidationError("El teléfono debe tener 9 dígitos.")
+        if dni and not re.fullmatch(r'\d{8}', dni):
+            raise serializers.ValidationError(
+                "El DNI debe tener 8 dígitos numéricos.")
+        if telefono and not re.fullmatch(r'\d{9}', telefono):
+            raise serializers.ValidationError(
+                "El teléfono debe tener 9 dígitos numéricos.")
         return data
 
     def create(self, validated_data):
