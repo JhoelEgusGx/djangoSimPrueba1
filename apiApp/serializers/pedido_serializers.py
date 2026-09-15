@@ -1,4 +1,5 @@
 import re
+from django.db import transaction
 from rest_framework import serializers
 from ..models import Pedido, PedidoItem, Producto, MetodoPago
 from .producto_serializers import ProductoSerializer
@@ -60,6 +61,20 @@ class PedidoSerializer(serializers.ModelSerializer):
         if not items:
             raise serializers.ValidationError("El pedido debe tener al menos un producto.")
 
+        # Validar cantidad y stock ANTES de guardar (falla rápido en is_valid)
+        for item in items:
+            producto = item.get('producto_id')
+            cantidad = item.get('cantidad', 0)
+
+            if cantidad <= 0:
+                raise serializers.ValidationError(
+                    {"items": f"Cantidad inválida para {producto.nombre}."}
+                )
+            if cantidad > producto.cantidad:
+                raise serializers.ValidationError(
+                    {"items": f"Stock insuficiente para {producto.nombre}. Solo hay {producto.cantidad} disponibles."}
+                )
+
         dni = data.get('dni', '')
         telefono = data.get('telefono', '')
         if dni and not re.fullmatch(r'\d{8}', dni):
@@ -74,60 +89,63 @@ class PedidoSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         metodo_pago = validated_data.pop('metodo_pago_id')
 
-        total = 0
-        prepared_items = []
-        for item in items_data:
-            producto = item['producto_id']
-            cantidad = item['cantidad']
+        with transaction.atomic():
+            total = 0
+            prepared_items = []
+            for item in items_data:
+                # Bloquear la fila del producto para evitar sobreventa
+                producto = item['producto_id']
+                cantidad = item['cantidad']
 
-            if cantidad <= 0:
-                raise serializers.ValidationError(
-                    f"Cantidad inválida para {producto.nombre}."
-                )
+                if cantidad <= 0:
+                    raise serializers.ValidationError(
+                        f"Cantidad inválida para {producto.nombre}."
+                    )
 
-            if cantidad > producto.cantidad:
-                raise serializers.ValidationError(
-                    f"Stock insuficiente para {producto.nombre}. Solo hay {producto.cantidad} disponibles."
-                )
+                stock = Producto.objects.select_for_update().get(pk=producto.pk)
+                if cantidad > stock.cantidad:
+                    raise serializers.ValidationError(
+                        f"Stock insuficiente para {stock.nombre}. Solo hay {stock.cantidad} disponibles."
+                    )
 
-            precio_unitario = self.calcular_precio_unitario(producto, cantidad)
-            if precio_unitario == 0:
-                raise serializers.ValidationError(
-                    f"No existe tarifa válida para {producto.nombre} con {cantidad} unidades."
-                )
+                precio_unitario = self.calcular_precio_unitario(stock, cantidad)
+                if precio_unitario == 0:
+                    raise serializers.ValidationError(
+                        f"No existe tarifa válida para {stock.nombre} con {cantidad} unidades."
+                    )
 
-            subtotal = cantidad * precio_unitario
-            total += subtotal
+                subtotal = cantidad * precio_unitario
+                total += subtotal
 
-            prepared_items.append({
-                "producto": producto,
-                "cantidad": cantidad,
-                "precio_unitario": precio_unitario,
-                "subtotal": subtotal
-            })
+                prepared_items.append({
+                    "producto": stock,
+                    "cantidad": cantidad,
+                    "precio_unitario": precio_unitario,
+                    "subtotal": subtotal
+                })
 
-        if validated_data.get('envio_provincia'):
-            total += 8
+            if validated_data.get('envio_provincia'):
+                total += 8
 
-        pedido = Pedido.objects.create(
-            metodo_pago=metodo_pago,
-            total=total,
-            **validated_data
-        )
-
-        for it in prepared_items:
-            producto = it['producto']
-            cantidad = it['cantidad']
-            precio_unitario = it['precio_unitario']
-
-            producto.cantidad -= cantidad
-            producto.save()
-
-            PedidoItem.objects.create(
-                pedido=pedido,
-                producto=producto,
-                cantidad=cantidad,
-                precio_unitario=precio_unitario
+            pedido = Pedido.objects.create(
+                metodo_pago=metodo_pago,
+                total=total,
+                **validated_data
             )
+
+            for it in prepared_items:
+                producto = it['producto']
+                cantidad = it['cantidad']
+                precio_unitario = it['precio_unitario']
+
+                producto.cantidad -= cantidad
+                producto.save()
+
+                PedidoItem.objects.create(
+                    pedido=pedido,
+                    producto=producto,
+                    cantidad=cantidad,
+                    precio_unitario=precio_unitario
+                )
 
         return pedido

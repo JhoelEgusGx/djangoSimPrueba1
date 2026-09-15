@@ -20,7 +20,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # Hosts y seguridad
 # =========================
 if DEBUG:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1","192.168.100.2"]
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1","192.168.100.2","testserver"]
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "corsheaders",
     "rest_framework",
+    "rest_framework.authtoken",
     "cloudinary",
     "tailwind",
     'apiApp',
@@ -77,7 +78,14 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
-    ]
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
 }
 
 # =========================
