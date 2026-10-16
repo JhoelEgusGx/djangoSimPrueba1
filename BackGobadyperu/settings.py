@@ -175,9 +175,6 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").replace(" ", "").split(",")
 
-# IA
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 # Cache para rate limiting
 CACHES = {
     'default': {

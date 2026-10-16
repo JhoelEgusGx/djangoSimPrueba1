@@ -7,7 +7,6 @@ from .views import (
     ProductoViewSet, TarifaViewSet, ImagenProductoViewSet, VideoProductoViewSet,
     CategoriaViewSet, MetodoPagoViewSet, PedidoViewSet, PedidoItemViewSet,
     ProveedorViewSet,
-    chatbot,
     login_view,
     cloudinary_imagenes_api,
     cloudinary_imagenes_delete,
@@ -32,7 +31,6 @@ router.register(r'pedido-items', PedidoItemViewSet, basename='pedidoitem')
 router.register(r'proveedores', ProveedorViewSet, basename='proveedor')
 
 urlpatterns = [
-    path('chatbot/', chatbot, name='chatbot'),
     path('api/', include(router.urls)),
     path('api/token/', obtain_auth_token, name='api_token_auth'),
 

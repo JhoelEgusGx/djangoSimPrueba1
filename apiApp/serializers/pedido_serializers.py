@@ -2,6 +2,7 @@ import re
 from django.db import transaction
 from rest_framework import serializers
 from ..models import Pedido, PedidoItem, Producto, MetodoPago
+from ..services.pedido_service import ENVIO_PROVINCIA_COST
 from .producto_serializers import ProductoSerializer
 from .metodo_pago_serializers import MetodoPagoSerializer
 
@@ -125,7 +126,7 @@ class PedidoSerializer(serializers.ModelSerializer):
                 })
 
             if validated_data.get('envio_provincia'):
-                total += 8
+                total += ENVIO_PROVINCIA_COST
 
             pedido = Pedido.objects.create(
                 metodo_pago=metodo_pago,

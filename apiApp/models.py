@@ -100,10 +100,15 @@ class Pedido(models.Model):
     def __str__(self):
         return f"Pedido {self.codigo}"
 
+    @property
+    def subtotal(self):
+        """Suma de los ítems (sin incluir el envío a provincia)."""
+        return sum((item.subtotal() for item in self.items.all()), 0)
+
 # ---------------------------
 class PedidoItem(models.Model):
     pedido = models.ForeignKey(Pedido, related_name='items', on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
     cantidad = models.PositiveIntegerField()
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2)
 

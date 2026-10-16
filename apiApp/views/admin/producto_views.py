@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
+from django.db.models import ProtectedError
 
 from apiApp.models import Producto, Categoria, Proveedor
 from .utils import staff_required, _guardar_tarifas, _guardar_imagenes_y_videos
@@ -200,6 +201,13 @@ def papelera_delete_permanente(request, pk):
     producto = get_object_or_404(Producto, pk=pk, activo=False)
     if request.method == 'POST':
         nombre = producto.nombre
-        producto.delete()
-        messages.success(request, f'Producto "{nombre}" eliminado permanentemente.')
+        try:
+            producto.delete()
+            messages.success(request, f'Producto "{nombre}" eliminado permanentemente.')
+        except ProtectedError:
+            messages.error(
+                request,
+                f'No se puede eliminar "{nombre}" porque tiene pedidos asociados. '
+                f'Déjalo archivado para conservar el historial de pedidos.'
+            )
     return redirect('papelera_list')

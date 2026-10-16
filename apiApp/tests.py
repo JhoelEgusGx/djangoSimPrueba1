@@ -99,6 +99,24 @@ class ModelosTests(TestCase):
         )
         self.assertEqual(pi.subtotal(), 75)
 
+    def test_pedido_subtotal_suma_items(self):
+        PedidoItem.objects.create(
+            pedido=self.pedido, producto=self.prod, cantidad=2, precio_unitario=10
+        )
+        PedidoItem.objects.create(
+            pedido=self.pedido, producto=self.prod, cantidad=3, precio_unitario=5
+        )
+        self.assertEqual(self.pedido.subtotal, 35)  # 20 + 15
+
+    def test_no_eliminar_producto_con_pedidos(self):
+        from django.db.models import ProtectedError
+
+        PedidoItem.objects.create(
+            pedido=self.pedido, producto=self.prod, cantidad=1, precio_unitario=15
+        )
+        with self.assertRaises(ProtectedError):
+            self.prod.delete()
+
 
 # ---------------------------------------------------------------------------
 # 2. Pruebas del serializer de pedido
@@ -246,10 +264,19 @@ class APIPermissionTests(TestCase):
         )
         self.assertEqual(r.status_code, 403)
 
-    # --- Pedidos: lectura pública, escritura protegida ---
-    def test_list_pedidos_publico(self):
+    # --- Pedidos: lectura y escritura protegidas (datos personales) ---
+    def test_list_pedidos_sin_auth_403(self):
+        r = self.api.get("/api/pedidos/")
+        self.assertEqual(r.status_code, 403)
+
+    def test_list_pedidos_con_token_200(self):
+        self.api.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
         r = self.api.get("/api/pedidos/")
         self.assertEqual(r.status_code, 200)
+
+    def test_list_pedido_items_sin_auth_403(self):
+        r = self.api.get("/api/pedido-items/")
+        self.assertEqual(r.status_code, 403)
 
     @patch("apiApp.views.pedido_views.enviar_correo_pedido")
     def test_post_pedidos_sin_auth_403(self, mock_email):
@@ -272,20 +299,22 @@ class APIPermissionTests(TestCase):
     @patch("apiApp.views.pedido_views.enviar_correo_pedido")
     def test_post_pedidos_con_token_201(self, mock_email):
         self.api.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
-        r = self.api.post(
-            "/api/pedidos/",
-            {
-                "nombre": "C",
-                "apellido": "D",
-                "dni": "22222222",
-                "telefono": "988888888",
-                "correo": "c@test.com",
-                "metodo_pago_id": self.mp.pk,
-                "envio_provincia": False,
-                "items": [{"producto_id": self.prod.pk, "cantidad": 2}],
-            },
-            format="json",
-        )
+        # El correo se envía en transaction.on_commit: forzamos su ejecución.
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.api.post(
+                "/api/pedidos/",
+                {
+                    "nombre": "C",
+                    "apellido": "D",
+                    "dni": "22222222",
+                    "telefono": "988888888",
+                    "correo": "c@test.com",
+                    "metodo_pago_id": self.mp.pk,
+                    "envio_provincia": False,
+                    "items": [{"producto_id": self.prod.pk, "cantidad": 2}],
+                },
+                format="json",
+            )
         self.assertEqual(r.status_code, 201)
         self.assertIn("codigo", r.data)
         mock_email.assert_called_once()

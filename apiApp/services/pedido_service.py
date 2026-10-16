@@ -1,43 +1,26 @@
 """
-Servicio para procesar la lógica de creación de pedidos:
-- calcular totales
-- generar items_html
-- generar mensaje_html del correo
-Se lanza ValueError si no hay tarifa válida para un producto.
+Servicio para generar el correo de confirmación de un pedido:
+- construir items_html a partir de los PedidoItem ya guardados
+- generar el mensaje_html del correo
+No recalcula precios ni totales: el serializer ya los dejó congelados
+en la base de datos (misma fuente de verdad que se muestra en el dashboard).
 """
 
-from django.shortcuts import get_object_or_404
-from ..models import Producto
-
-ENVIO_PROVINCIA_COST = 8  # constante tomada de tu lógica original
+ENVIO_PROVINCIA_COST = 8
 
 
-def procesar_items_y_calcular_totales(items_data):
+def generar_items_html(pedido):
     """
-    items_data: lista de dicts con 'producto_id' y 'cantidad' como en el request.
-    Retorna: (items_html, total_general)
-    Lanza ValueError si alguna regla no se cumple (no hay tarifa válida).
+    Genera el HTML de las filas de productos usando los PedidoItem ya
+    guardados (cantidad y precio_unitario congelados al momento de la compra).
     """
     items_html = ""
-    total_general = 0
 
-    for item in items_data:
-        producto = get_object_or_404(Producto, id=item["producto_id"])
-        cantidad = int(item["cantidad"])
-
-        # Buscar tarifa según cantidad (misma lógica que tenías)
-        tarifa = None
-        for t in producto.tarifas.all():
-            if (t.minimo is None or cantidad >= t.minimo) and (t.maximo is None or cantidad <= t.maximo):
-                tarifa = t
-                break
-
-        if not tarifa:
-            raise ValueError(f"No hay tarifa válida para {producto.nombre} con cantidad {cantidad}")
-
-        precio_unitario = float(tarifa.precio_unitario)
-        subtotal = precio_unitario * cantidad
-        total_general += subtotal
+    for item in pedido.items.all():
+        producto = item.producto
+        cantidad = item.cantidad
+        precio_unitario = float(item.precio_unitario)
+        subtotal = float(item.subtotal())
 
         primera_imagen = producto.imagenes.first()
         imagen_url = primera_imagen.imagen.url if (primera_imagen and primera_imagen.imagen) else "https://via.placeholder.com/50"
@@ -54,7 +37,7 @@ def procesar_items_y_calcular_totales(items_data):
             </tr>
         """
 
-    return items_html, total_general
+    return items_html
 
 
 def generar_mensaje_html(pedido, items_html, total_general, envio=0):
@@ -62,7 +45,7 @@ def generar_mensaje_html(pedido, items_html, total_general, envio=0):
     Genera el HTML del correo usando la estructura que tenías.
     Retorna string HTML.
     """
-    envio_html = "<p>Envío a provincia: <b>S/. 8.00</b></p>" if envio else ""
+    envio_html = f"<p>Envío a provincia: <b>S/. {ENVIO_PROVINCIA_COST:.2f}</b></p>" if envio else ""
     mensaje_html = f"""
     <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; border:1px solid #eee; padding:20px; border-radius:8px;">
         <h2 style="color:#0f172a; text-align:center;">¡Gracias por tu pedido, {pedido.nombre}!</h2>

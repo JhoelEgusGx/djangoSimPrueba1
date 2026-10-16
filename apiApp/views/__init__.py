@@ -1,4 +1,3 @@
-from .home_view import chatbot
 from .categoria_views import CategoriaViewSet
 from .producto_views import (
     ProductoViewSet, TarifaViewSet,

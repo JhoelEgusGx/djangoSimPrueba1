@@ -31,7 +31,7 @@
                 <div class="mt-4 pt-4 border-t border-base-300 space-y-1.5 text-sm">
                     <div class="flex justify-between text-base-content/60">
                         <span>Subtotal</span>
-                        <span>S/. {{ pedido.total|add:"-8"|floatformat:2 }}</span>
+                        <span>S/. {{ pedido.subtotal|floatformat:2 }}</span>
                     </div>
                     {% if pedido.envio_provincia %}
                         <div class="flex justify-between text-warning">
