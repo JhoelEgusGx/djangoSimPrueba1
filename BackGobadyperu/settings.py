@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 import dj_database_url
 import cloudinary
 from dotenv import load_dotenv  
@@ -15,6 +16,23 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "insecure-secret-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
+# Bandera para no aplicar el endurecimiento de producción durante los tests
+# (el runner de Django fuerza DEBUG=False; si el bloque de seguridad se
+# activara, los tests con el test client fallarían).
+TESTING = "test" in sys.argv
+
+# =========================
+# Seguridad de producción (solo prod; no durante los tests)
+# =========================
+# SECURE_SSL_REDIRECT se omite a propósito: Railway ya redirige http -> https
+# con un 301 en su borde (Django recomienda el proxy como alternativa).
+if not DEBUG and not TESTING:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # HSTS: subir gradualmente (1 día -> 1 semana -> 1 año) tras verificar
+    SECURE_HSTS_SECONDS = 86400
 
 # =========================
 # Hosts y seguridad

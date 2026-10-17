@@ -2,7 +2,9 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.test import TestCase
+from django.http import HttpResponse
+from django.middleware.security import SecurityMiddleware
+from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
@@ -369,3 +371,24 @@ class TokenThrottleTests(TestCase):
             self._login("atacante1", "mala1")
         r = self._login("atacante2", "mala2")
         self.assertEqual(r.status_code, 429)
+
+
+# ---------------------------------------------------------------------------
+# 5. Pruebas del endurecimiento de seguridad de producción (#14)
+# ---------------------------------------------------------------------------
+class SeguridadProduccionTests(TestCase):
+    @override_settings(SECURE_HSTS_SECONDS=86400)
+    def test_hsts_header_se_agrega_en_request_seguro(self):
+        request = RequestFactory().get("/", secure=True)
+        middleware = SecurityMiddleware(lambda r: HttpResponse())
+        response = middleware(request)
+        self.assertEqual(
+            response["Strict-Transport-Security"], "max-age=86400"
+        )
+
+    @override_settings(CSRF_COOKIE_SECURE=True)
+    def test_cookie_csrf_lleva_flag_secure(self):
+        client = APIClient()
+        response = client.get("/login/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.cookies["csrftoken"]["secure"])
