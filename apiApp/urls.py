@@ -1,12 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework.authtoken.views import obtain_auth_token
 from django.contrib.auth import views as auth_views
 
 from .views import (
     ProductoViewSet, TarifaViewSet, ImagenProductoViewSet, VideoProductoViewSet,
     CategoriaViewSet, MetodoPagoViewSet, PedidoViewSet, PedidoItemViewSet,
-    ProveedorViewSet,
+    ProveedorViewSet, TokenThrottledView,
     login_view,
     cloudinary_imagenes_api,
     cloudinary_imagenes_delete,
@@ -32,7 +31,7 @@ router.register(r'proveedores', ProveedorViewSet, basename='proveedor')
 
 urlpatterns = [
     path('api/', include(router.urls)),
-    path('api/token/', obtain_auth_token, name='api_token_auth'),
+    path('api/token/', TokenThrottledView.as_view(), name='api_token_auth'),
 
     # Auth
     path('login/', login_view, name='login'),

@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -318,3 +319,53 @@ class APIPermissionTests(TestCase):
         self.assertEqual(r.status_code, 201)
         self.assertIn("codigo", r.data)
         mock_email.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# 4. Pruebas de rate limiting en POST /api/token/
+# ---------------------------------------------------------------------------
+class TokenThrottleTests(TestCase):
+    USERNAME = "throttle-user"
+    PASSWORD = "ClaveSegura123!"
+
+    def setUp(self):
+        # El caché de throttle persiste entre tests: limpiarlo para aislar cada uno.
+        cache.clear()
+        self.api = APIClient()
+        self.user = User.objects.create_user(
+            username=self.USERNAME, password=self.PASSWORD
+        )
+        self.token = Token.objects.create(user=self.user)
+
+    def tearDown(self):
+        cache.clear()
+
+    def _login(self, username, password):
+        return self.api.post(
+            "/api/token/",
+            {"username": username, "password": password},
+            format="json",
+        )
+
+    def test_login_valido_devuelve_token_200(self):
+        r = self._login(self.USERNAME, self.PASSWORD)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("token", r.data)
+
+    def test_cinco_intentos_fallidos_no_bloquean(self):
+        for _ in range(5):
+            r = self._login("nadie", "contrasena-mala")
+            self.assertEqual(r.status_code, 400)
+
+    def test_sexto_intento_fallido_recibe_429(self):
+        for _ in range(5):
+            self._login("nadie", "contrasena-mala")
+        r = self._login("nadie", "contrasena-mala")
+        self.assertEqual(r.status_code, 429)
+
+    def test_limite_compartido_por_ip(self):
+        # El contador es por IP, no por username intentado.
+        for _ in range(5):
+            self._login("atacante1", "mala1")
+        r = self._login("atacante2", "mala2")
+        self.assertEqual(r.status_code, 429)

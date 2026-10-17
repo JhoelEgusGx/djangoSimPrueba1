@@ -1,4 +1,5 @@
 from .categoria_views import CategoriaViewSet
+from .auth_views import TokenThrottledView
 from .producto_views import (
     ProductoViewSet, TarifaViewSet,
     ImagenProductoViewSet, VideoProductoViewSet

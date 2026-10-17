@@ -86,6 +86,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'token': '5/min',
+    },
 }
 
 # =========================
@@ -175,11 +178,11 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").replace(" ", "").split(",")
 
-# Cache para rate limiting
+# Cache para rate limiting (DRF guarda aquí los contadores de throttle)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'chatbot-cache',
+        'LOCATION': 'throttle-cache',
     }
 }
 
