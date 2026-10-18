@@ -3,6 +3,7 @@ import os
 import sys
 import dj_database_url
 import cloudinary
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv  
 
 # =========================
@@ -14,8 +15,18 @@ load_dotenv()
 # Rutas y claves
 # =========================
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv("SECRET_KEY", "insecure-secret-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
+
+# SECRET_KEY obligatoria en producción. En desarrollo se permite un valor de
+# relleno solo local (nunca debe llegar a producción).
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-dev-only-key"
+    else:
+        raise ImproperlyConfigured(
+            "La variable de entorno SECRET_KEY es obligatoria en producción."
+        )
 
 # Bandera para no aplicar el endurecimiento de producción durante los tests
 # (el runner de Django fuerza DEBUG=False; si el bloque de seguridad se
