@@ -1,5 +1,9 @@
+import logging
+
 import resend
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 resend.api_key = settings.RESEND_API_KEY
 
@@ -15,6 +19,6 @@ def enviar_correo_pedido(cliente_email, asunto, mensaje_html):
             "html": mensaje_html,
         })
         return response
-    except Exception as e:
-        print("Error al enviar correo:", e)
+    except Exception:
+        logger.exception("Error al enviar el correo de confirmación del pedido")
         return None
