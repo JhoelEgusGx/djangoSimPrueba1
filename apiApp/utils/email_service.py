@@ -13,7 +13,7 @@ def enviar_correo_pedido(cliente_email, asunto, mensaje_html):
     """
     try:
         response = resend.Emails.send({
-            "from": "Gobady Perú <onboarding@resend.dev>",  # 👈 Puedes usar dominio verificado después
+            "from": settings.RESEND_FROM,
             "to": cliente_email,
             "subject": asunto,
             "html": mensaje_html,

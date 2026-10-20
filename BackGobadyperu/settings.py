@@ -211,6 +211,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Otras configuraciones
 # =========================
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_FROM = os.getenv("RESEND_FROM", "Gobady Perú <pedidos@gobady.com>")
 
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
